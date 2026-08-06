@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>NovaERP</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff8f7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#131313" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+    <!--
+      Es un ERP: que un buscador indexe una URL de tenant no aporta nada y sí
+      filtra qué empresas son clientes.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!--
+      Las dos fuentes de texto se precargan porque las necesita el primer
+      pintado. La de iconos no: pesa 71 kB y compite con el shell por el ancho
+      de banda; sus iconos aparecen unas décimas después y nadie lo nota.
+    -->
+    <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+
+    <script>
+      /*
+       * Aplica el tema ANTES del primer pintado.
+       *
+       * Tiene que ser inline y síncrono: si esperáramos a que Angular arranque
+       * y ThemeService ponga la clase, un usuario en modo oscuro vería un
+       * flashazo blanco en cada carga. Es corto a propósito — solo la clase; el
+       * resto de la lógica vive en ThemeService.
+       *
+       * Debe mantenerse en sintonía con esa clase: misma clave de storage y
+       * mismo criterio ('system' = no hay clave guardada).
+       */
+      (function () {
+        try {
+          var guardada = localStorage.getItem('novaerp.theme');
+          var oscuro =
+            guardada === 'dark' ||
+            (guardada !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (oscuro) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          }
+        } catch (e) {
+          /* Storage bloqueado (modo privado estricto): se queda en claro. */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>

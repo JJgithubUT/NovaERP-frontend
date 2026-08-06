@@ -1,0 +1,30 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/spec",
+    /* Explícito porque TypeScript 6 ya no lo infiere junto a `outDir`.
+       No pongas `noEmit` aquí para evitarlo: el builder de tests de Angular
+       necesita emitir, y sin emisión no encuentra los componentes bajo prueba. */
+    "rootDir": "./src",
+    /*
+     * `node` solo aquí, nunca en tsconfig.app.json (que mantiene `types: []`).
+     * Los tests sí corren en Node y alguno lee archivos del repo —
+     * `contrast.spec.ts` valida los tokens leyendo styles.css—, pero exponer
+     * `fs` o `process` al código de la app invita a importarlos en algo que
+     * acabará en el navegador y reventará en runtime.
+     */
+    "types": ["vitest/globals", "node"]
+  },
+  /*
+   * Incluye los fuentes además de los specs, no solo `*.spec.ts`.
+   * El compilador de Angular exige que todo archivo con metadata
+   * (`@Component`, `@Injectable`) esté en el programa de TypeScript; con un
+   * include limitado a los specs, cada fuente importado se compila sin
+   * typecheck y los componentes bajo prueba fallan directamente.
+   */
+  "include": ["src/**/*.d.ts", "src/**/*.ts"],
+  /* El SW tiene su propio proyecto (tsconfig.sw.json) con lib de worker. */
+  "exclude": ["src/sw/**/*.ts"]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/yamadashy/repomix/main/schema.json",
+  "output": {
+    "filePath": "repomix-out.xml",
+    "style": "xml",
+    "removeComments": false,
+    "showLineNumbers": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "ignore": {
+    "customPatterns": [
+      "node_modules/**",
+      ".angular/**",
+      ".git/**",
+      "dist/**",
+      "tmp/**",
+      "out-tsc/**",
+      "coverage/**",
+      "package-lock.json",
+      "yarn.lock",
+      "pnpm-lock.yaml",
+      ".editorconfig"
+    ],
+    "useGitignore": true,
+    "useDefaultPatterns": true
+  }
+}

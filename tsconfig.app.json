@@ -1,0 +1,16 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  /*
+   * El Service Worker se excluye a propósito: corre en un scope sin `window` ni
+   * `document`, con su propia lib de tipos y su propio build (scripts/build-sw.mjs).
+   * Mezclarlo aquí haría que `self` se resolviera al de Window y los tipos
+   * mentirían en ambos lados.
+   */
+  "exclude": ["src/**/*.spec.ts", "src/sw/**/*.ts"]
+}

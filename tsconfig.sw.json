@@ -1,0 +1,31 @@
+/*
+ * Typecheck del Service Worker. No emite nada: el bundle lo hace esbuild desde
+ * scripts/build-sw.mjs. Esto existe para que `npm run typecheck` y el editor
+ * validen el SW con los tipos correctos de worker.
+ */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": [],
+    /* Sin "dom": en un worker no existen `window` ni `document`, y dejarlos
+       visibles invita a escribir código que compila y revienta en runtime. */
+    "lib": ["ES2022", "WebWorker"],
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  /*
+   * Los archivos se listan uno a uno en vez de con un glob sobre `core/offline`.
+   * No es pedantería: ese directorio también tiene código que solo corre en la
+   * app (`sync-queue.service.ts` inyecta servicios de Angular,
+   * `catalog-cache.service.ts` llega a `localStorage` vía AuthStore). Un glob
+   * los arrastraría aquí y fallarían el typecheck con razón — no existen en un
+   * worker. Esta lista es exactamente la superficie que el SW comparte con la app.
+   */
+  "include": ["src/sw/**/*.ts"],
+  "files": [
+    "src/app/core/offline/nova-db.ts",
+    "src/app/core/offline/outbox-drain.ts",
+    "src/app/core/offline/outbox.model.ts"
+  ]
+}
