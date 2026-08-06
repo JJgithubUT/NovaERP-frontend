@@ -11,9 +11,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { InventarioApi } from '../../../api/services/inventario.api';
+import { VentasApi } from '../../../api/services/ventas.api';
 import { AuthStore } from '../../../core/auth/auth.store';
-import { qk } from '../../../core/query/query-keys';
-import type { Uuid } from '../../../api/models';
+import { qk, type Recurso } from '../../../core/query/query-keys';
+import type { CatalogQuery, Uuid } from '../../../api/models';
 import { IconComponent } from '../icon/icon.component';
 
 export interface OpcionCombo {
@@ -22,6 +23,15 @@ export interface OpcionCombo {
   etiqueta: string;
   detalle?: string;
 }
+
+/** Catálogos que se pueden elegir con este combo. */
+export type TipoEntidad = 'producto' | 'almacen' | 'cliente';
+
+const RECURSO: Readonly<Record<TipoEntidad, Recurso>> = {
+  producto: 'productos',
+  almacen: 'almacenes',
+  cliente: 'clientes',
+};
 
 const DEBOUNCE_MS = 250;
 const MAX_OPCIONES = 10;
@@ -113,12 +123,13 @@ const MAX_OPCIONES = 10;
   `,
 })
 export class EntityComboComponent {
-  private readonly api = inject(InventarioApi);
+  private readonly inventario = inject(InventarioApi);
+  private readonly ventas = inject(VentasApi);
   private readonly store = inject(AuthStore);
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
 
   readonly etiqueta = input.required<string>();
-  readonly tipo = input.required<'producto' | 'almacen'>();
+  readonly tipo = input.required<TipoEntidad>();
   readonly marcador = input('Buscar…');
 
   readonly valor = model<OpcionCombo | null>(null);
@@ -135,20 +146,34 @@ export class EntityComboComponent {
 
   protected readonly consulta = injectQuery(() => {
     const slug = this.store.tenantSlug() ?? '';
-    const recurso = this.tipo() === 'producto' ? 'productos' : 'almacenes';
+    const tipo = this.tipo();
     const filtros = { search: this.busqueda(), page_size: MAX_OPCIONES, activo: true };
 
     return {
-      queryKey: qk.lista(slug, recurso, filtros),
+      queryKey: qk.lista(slug, RECURSO[tipo], filtros),
       // Sin desplegar no hay nada que buscar; así abrir un formulario no
       // dispara dos peticiones que quizá nadie llegue a usar.
       enabled: this.abierto() && slug !== '',
-      queryFn: () =>
-        this.tipo() === 'producto'
-          ? this.api.listarProductos(filtros).then((pagina) => pagina.results.map(aOpcionProducto))
-          : this.api.listarAlmacenes(filtros).then((pagina) => pagina.results.map(aOpcionAlmacen)),
+      queryFn: () => this.buscarOpciones(tipo, filtros),
     };
   });
+
+  private buscarOpciones(tipo: TipoEntidad, filtros: CatalogQuery): Promise<OpcionCombo[]> {
+    switch (tipo) {
+      case 'producto':
+        return this.inventario
+          .listarProductos(filtros)
+          .then((pagina) => pagina.results.map(aOpcionProducto));
+      case 'almacen':
+        return this.inventario
+          .listarAlmacenes(filtros)
+          .then((pagina) => pagina.results.map(aOpcionAlmacen));
+      case 'cliente':
+        return this.ventas
+          .listarClientes(filtros)
+          .then((pagina) => pagina.results.map(aOpcionCliente));
+    }
+  }
 
   protected alEscribir(evento: Event): void {
     const texto = (evento.target as HTMLInputElement).value;
@@ -184,4 +209,16 @@ function aOpcionAlmacen(almacen: {
   ubicacion: string | null;
 }): OpcionCombo {
   return { id: almacen.id, etiqueta: almacen.nombre, detalle: almacen.ubicacion ?? undefined };
+}
+
+function aOpcionCliente(cliente: {
+  id: Uuid;
+  razon_social: string;
+  rfc_o_id_fiscal: string | null;
+}): OpcionCombo {
+  return {
+    id: cliente.id,
+    etiqueta: cliente.razon_social,
+    detalle: cliente.rfc_o_id_fiscal ?? undefined,
+  };
 }

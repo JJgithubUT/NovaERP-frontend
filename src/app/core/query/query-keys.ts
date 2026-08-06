@@ -17,7 +17,12 @@ export type Recurso =
   | 'stock'
   | 'kardex'
   | 'valuacion'
-  | 'alertas';
+  | 'alertas'
+  | 'oportunidades'
+  | 'pipeline'
+  | 'cotizaciones'
+  | 'pedidos'
+  | 'facturas';
 
 /**
  * Cualquier objeto de filtros de listado.
