@@ -88,7 +88,7 @@ import { ProveedorFormModal } from './proveedor-form.modal';
                   <td>
                     <div class="flex justify-end gap-1.5">
                       <button type="button" class="btn-fila" (click)="verHistorial(proveedor)">
-                        <app-icon name="receipt_long" [size]="14" />
+                        <app-icon name="history" [size]="14" />
                         Historial
                       </button>
                       <button type="button" class="btn-fila" (click)="abrirEdicion(proveedor)">
