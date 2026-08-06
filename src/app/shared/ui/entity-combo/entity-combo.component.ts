@@ -10,6 +10,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { injectQuery } from '@tanstack/angular-query-experimental';
+import { ComprasApi } from '../../../api/services/compras.api';
 import { InventarioApi } from '../../../api/services/inventario.api';
 import { VentasApi } from '../../../api/services/ventas.api';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -25,12 +26,13 @@ export interface OpcionCombo {
 }
 
 /** Catálogos que se pueden elegir con este combo. */
-export type TipoEntidad = 'producto' | 'almacen' | 'cliente';
+export type TipoEntidad = 'producto' | 'almacen' | 'cliente' | 'proveedor';
 
 const RECURSO: Readonly<Record<TipoEntidad, Recurso>> = {
   producto: 'productos',
   almacen: 'almacenes',
   cliente: 'clientes',
+  proveedor: 'proveedores',
 };
 
 const DEBOUNCE_MS = 250;
@@ -125,6 +127,7 @@ const MAX_OPCIONES = 10;
 export class EntityComboComponent {
   private readonly inventario = inject(InventarioApi);
   private readonly ventas = inject(VentasApi);
+  private readonly compras = inject(ComprasApi);
   private readonly store = inject(AuthStore);
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
 
@@ -172,6 +175,10 @@ export class EntityComboComponent {
         return this.ventas
           .listarClientes(filtros)
           .then((pagina) => pagina.results.map(aOpcionCliente));
+      case 'proveedor':
+        return this.compras
+          .listarProveedores(filtros)
+          .then((pagina) => pagina.results.map(aOpcionProveedor));
     }
   }
 
@@ -220,5 +227,17 @@ function aOpcionCliente(cliente: {
     id: cliente.id,
     etiqueta: cliente.razon_social,
     detalle: cliente.rfc_o_id_fiscal ?? undefined,
+  };
+}
+
+function aOpcionProveedor(proveedor: {
+  id: Uuid;
+  razon_social: string;
+  rfc_o_id_fiscal: string;
+}): OpcionCombo {
+  return {
+    id: proveedor.id,
+    etiqueta: proveedor.razon_social,
+    detalle: proveedor.rfc_o_id_fiscal,
   };
 }

@@ -19,6 +19,7 @@ const PESTANAS: readonly Pestana[] = [
   { segmento: 'cotizaciones', label: 'Cotizaciones' },
   { segmento: 'pedidos', label: 'Pedidos' },
   { segmento: 'facturas', label: 'Facturas' },
+  { segmento: 'reportes', label: 'Reportes' },
 ];
 
 @Component({

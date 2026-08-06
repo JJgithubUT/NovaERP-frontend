@@ -42,6 +42,46 @@ export const ventasRoutes: Routes = [
         title: 'Facturas · NovaERP',
         loadComponent: () => import('./facturas/facturas.page').then((m) => m.FacturasPage),
       },
+      {
+        path: 'reportes',
+        loadComponent: () => import('./reportes/reportes.layout').then((m) => m.ReportesLayout),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'periodo' },
+          {
+            path: 'periodo',
+            title: 'Ventas por periodo · NovaERP',
+            loadComponent: () =>
+              import('./reportes/ventas-periodo.page').then((m) => m.VentasPeriodoPage),
+          },
+          {
+            path: 'clientes',
+            title: 'Ranking de clientes · NovaERP',
+            loadComponent: () =>
+              import('./reportes/ranking-clientes.page').then((m) => m.RankingClientesPage),
+          },
+          {
+            path: 'productos',
+            title: 'Ranking de productos · NovaERP',
+            loadComponent: () =>
+              import('./reportes/ranking-productos.page').then((m) => m.RankingProductosPage),
+          },
+          {
+            path: 'embudo',
+            title: 'Embudo comercial · NovaERP',
+            loadComponent: () => import('./reportes/embudo.page').then((m) => m.EmbudoPage),
+          },
+          {
+            path: 'cartera',
+            title: 'Cartera · NovaERP',
+            loadComponent: () => import('./reportes/cartera.page').then((m) => m.CarteraPage),
+          },
+          {
+            path: 'vendedores',
+            title: 'Desempeño por vendedor · NovaERP',
+            loadComponent: () => import('./reportes/vendedores.page').then((m) => m.VendedoresPage),
+          },
+        ],
+      },
     ],
   },
 ];

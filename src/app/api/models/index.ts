@@ -5,4 +5,6 @@ export * from './almacen.model';
 export * from './inventario.model';
 export * from './cliente.model';
 export * from './ventas.model';
+export * from './reportes.model';
 export * from './proveedor.model';
+export * from './compras.model';

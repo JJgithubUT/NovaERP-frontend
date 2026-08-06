@@ -22,7 +22,11 @@ export type Recurso =
   | 'pipeline'
   | 'cotizaciones'
   | 'pedidos'
-  | 'facturas';
+  | 'facturas'
+  | 'ordenes-compra'
+  | 'recepciones'
+  | 'cuentas-por-pagar'
+  | 'config-aprobacion';
 
 /**
  * Cualquier objeto de filtros de listado.
