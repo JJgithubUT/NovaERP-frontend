@@ -3,7 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { QueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
-import type { LoginChallengeResponse, LoginRequest, LoginResponse, MeResponse } from '../../api/models';
+import type {
+  LoginChallengeResponse,
+  LoginRequest,
+  LoginResponse,
+  MeResponse,
+} from '../../api/models';
 import { API_BASE_URL } from '../config/api.config';
 import { AuthStore } from './auth.store';
 

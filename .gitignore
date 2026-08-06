@@ -33,6 +33,7 @@ yarn-error.log
 !.vscode/extensions.json
 !.vscode/mcp.json
 .history/*
+/other-front
 
 # Claude Code: settings.local.json son permisos por máquina, no del proyecto.
 .claude/settings.local.json

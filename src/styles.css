@@ -435,3 +435,191 @@
     background-color: color-mix(in srgb, var(--color-primary-container) 4%, transparent);
   }
 }
+
+/* ---------------------------------------------------------------- tablas */
+
+/*
+ * Estilo único de los listados. Se define aquí, y no repitiendo diez clases de
+ * Tailwind en cada `<table>`, porque son siete tablas en Inventario y otras
+ * tantas por módulo: cualquier ajuste de padding o de borde tendría que
+ * replicarse a mano en todas y acabarían divergiendo.
+ *
+ * Uso:
+ *   <div class="tabla-scroll"><table class="tabla">…</table></div>
+ *
+ * El envoltorio es obligatorio: sin él, una tabla ancha desborda el `<main>` y
+ * empuja la página entera a scrollear en horizontal.
+ */
+@layer components {
+  .tabla-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-DEFAULT);
+    background-color: var(--color-surface-container-lowest);
+  }
+
+  .tabla {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+  }
+
+  /* La cabecera Guinda es la firma visual del listado. `on-action` es blanco
+     en ambos temas: 12:1 en claro, 7.9:1 en oscuro. */
+  .tabla thead {
+    background-color: var(--color-action);
+    color: var(--color-on-action);
+  }
+
+  .tabla th {
+    padding: 0.75rem;
+    font-size: var(--text-label-caps);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .tabla td {
+    padding: 0.75rem;
+    color: var(--color-on-surface);
+    border-top: 1px solid var(--color-outline-variant);
+  }
+
+  .tabla tbody tr:hover td {
+    background-color: color-mix(in srgb, var(--color-primary-container) 5%, transparent);
+  }
+
+  /* Columnas de importes y cantidades: alineadas a la derecha y con cifras de
+     ancho fijo, para que los decimales queden en la misma vertical. */
+  .tabla .num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tabla .clave {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  .tabla .tenue {
+    color: var(--color-on-surface-variant);
+  }
+}
+
+/* ---------------------------------------------------------------- campos */
+
+/*
+ * Inputs, selects y textareas de los formularios. Misma razón que las tablas:
+ * son decenas repartidas por los modales de cada módulo.
+ */
+@layer components {
+  .campo-control {
+    width: 100%;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-DEFAULT);
+    background-color: var(--color-surface-container);
+    padding: 0.5rem 0.75rem;
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md--line-height);
+    color: var(--color-on-surface);
+  }
+
+  .campo-control::placeholder {
+    color: color-mix(in srgb, var(--color-on-surface-variant) 60%, transparent);
+  }
+
+  .campo-control:focus {
+    border-color: var(--color-primary-container);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary-container) 15%, transparent);
+    outline: none;
+  }
+
+  .campo-control:disabled {
+    opacity: 0.5;
+  }
+}
+
+/* --------------------------------------------------------------- botones */
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: var(--radius-DEFAULT);
+    padding: 0.5rem 1rem;
+    font-size: var(--text-label-md);
+    font-weight: 600;
+    white-space: nowrap;
+    transition:
+      background-color 150ms,
+      opacity 150ms;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* CTA de la pantalla. Usa el par `action`/`on-action`, no `primary`: ver la
+     nota del bloque @theme sobre por qué `primary` se rompe en oscuro. */
+  .btn-primario {
+    background-image: linear-gradient(
+      180deg,
+      var(--color-action) 0%,
+      color-mix(in srgb, var(--color-action) 80%, black) 100%
+    );
+    color: var(--color-on-action);
+  }
+
+  .btn-secundario {
+    border: 1px solid var(--color-outline-variant);
+    background-color: var(--color-surface-container-lowest);
+    color: var(--color-on-surface);
+  }
+
+  .btn-secundario:hover:not(:disabled) {
+    background-color: var(--color-surface-container);
+  }
+
+  .btn-peligro {
+    border: 1px solid var(--color-error);
+    background-color: transparent;
+    color: var(--color-error);
+  }
+
+  .btn-peligro:hover:not(:disabled) {
+    background-color: var(--color-error-container);
+    color: var(--color-on-error-container);
+  }
+
+  /* Acciones dentro de una fila de tabla: mismo lenguaje, menos peso. */
+  .btn-fila {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.625rem;
+    font-size: var(--text-label-md);
+    font-weight: 500;
+    color: var(--color-on-surface-variant);
+    white-space: nowrap;
+    transition: background-color 150ms;
+  }
+
+  .btn-fila:hover:not(:disabled) {
+    background-color: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+  }
+
+  .btn-fila:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

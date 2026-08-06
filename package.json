@@ -8,6 +8,7 @@
     "build:app": "ng build",
     "build:sw": "node scripts/build-sw.mjs",
     "watch": "ng build --watch --configuration development",
+    "pretest": "node scripts/check-cwd-casing.mjs",
     "test": "ng test",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit && tsc -p tsconfig.sw.json",
     "format": "prettier --write \"src/**/*.{ts,html,css,json}\"",

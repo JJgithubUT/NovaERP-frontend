@@ -5,6 +5,7 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { ThemeService } from '../../core/theme/theme.service';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { OfflineBannerComponent } from '../offline-banner/offline-banner.component';
+import { ToastHostComponent } from '../../shared/ui/toast/toast-host.component';
 import { UpdatePromptComponent } from '../update-prompt/update-prompt.component';
 import { construirNavegacion } from '../navigation';
 
@@ -26,6 +27,7 @@ import { construirNavegacion } from '../navigation';
     RouterLinkActive,
     IconComponent,
     OfflineBannerComponent,
+    ToastHostComponent,
     UpdatePromptComponent,
   ],
   template: `
@@ -69,22 +71,17 @@ import { construirNavegacion } from '../navigation';
             <span>Inicio</span>
           </a>
 
-          @for (grupo of navegacion(); track grupo.codigo) {
-            <p class="mt-4 px-3 pb-1 text-label-caps uppercase text-on-surface-variant">
-              {{ grupo.label }}
-            </p>
-            @for (item of grupo.items; track item.label) {
-              <a
-                [routerLink]="item.link"
-                routerLinkActive="!bg-surface-container-high !text-primary !border-primary-container font-bold"
-                #activo="routerLinkActive"
-                class="flex items-center gap-3 rounded-md border-l-4 border-transparent px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
-                (click)="menuAbierto.set(false)"
-              >
-                <app-icon [name]="item.icon" [filled]="activo.isActive" />
-                <span>{{ item.label }}</span>
-              </a>
-            }
+          @for (item of navegacion(); track item.codigo) {
+            <a
+              [routerLink]="item.link"
+              routerLinkActive="!bg-surface-container-high !text-primary !border-primary-container font-bold"
+              #activo="routerLinkActive"
+              class="flex items-center gap-3 rounded-md border-l-4 border-transparent px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+              (click)="menuAbierto.set(false)"
+            >
+              <app-icon [name]="item.icon" [filled]="activo.isActive" />
+              <span>{{ item.label }}</span>
+            </a>
           } @empty {
             <p class="px-3 text-label-md text-on-surface-variant">Sin módulos habilitados.</p>
           }
@@ -151,6 +148,10 @@ import { construirNavegacion } from '../navigation';
           <router-outlet />
         </main>
       </div>
+
+      <!-- Fuera del <main>: los avisos van fijos a la ventana, y dentro de un
+           contenedor con scroll se desplazarían con la tabla. -->
+      <app-toast-host />
     </div>
   `,
 })

@@ -1,5 +1,32 @@
-import type { CatalogQuery } from '../../api/models';
 import type { Entidad } from '../offline/outbox.model';
+
+/**
+ * Todo lo cacheable, no solo lo mutable.
+ *
+ * `Entidad` (el outbox) son los cuatro catálogos que se pueden escribir sin red.
+ * Aquí se suman los recursos de **solo lectura** —vistas SQL y bitácoras— que
+ * también se cachean pero nunca se encolan. Mantenerlos en tipos distintos es lo
+ * que impide que alguien intente encolar una escritura sobre el kardex, que es
+ * inmutable por diseño.
+ */
+export type Recurso =
+  | Entidad
+  | 'movimientos'
+  | 'ajustes'
+  | 'transferencias'
+  | 'stock'
+  | 'kardex'
+  | 'valuacion'
+  | 'alertas';
+
+/**
+ * Cualquier objeto de filtros de listado.
+ *
+ * Es `object` y no `Record<string, unknown>` para que las interfaces concretas
+ * (`KardexQuery`, `CatalogQuery`…) encajen: una interfaz sin index signature no
+ * es asignable a un Record, aunque sus claves sí sean strings.
+ */
+export type ListaQuery = object;
 
 /**
  * Fábrica única de claves de caché.
@@ -18,13 +45,13 @@ export const qk = {
 
   me: (tenantSlug: string) => [tenantSlug, 'me'] as const,
 
-  catalogo: (tenantSlug: string, entidad: Entidad) => [tenantSlug, entidad] as const,
+  catalogo: (tenantSlug: string, recurso: Recurso) => [tenantSlug, recurso] as const,
 
-  lista: (tenantSlug: string, entidad: Entidad, params: CatalogQuery = {}) =>
-    [tenantSlug, entidad, 'lista', normalizar(params)] as const,
+  lista: (tenantSlug: string, recurso: Recurso, params: ListaQuery = {}) =>
+    [tenantSlug, recurso, 'lista', normalizar(params)] as const,
 
-  detalle: (tenantSlug: string, entidad: Entidad, id: string) =>
-    [tenantSlug, entidad, 'detalle', id] as const,
+  detalle: (tenantSlug: string, recurso: Recurso, id: string) =>
+    [tenantSlug, recurso, 'detalle', id] as const,
 } as const;
 
 /**
@@ -32,7 +59,7 @@ export const qk = {
  * `{page:1}` y `{page:1,search:''}` serían claves distintas y duplicarían la
  * misma petición.
  */
-function normalizar(params: CatalogQuery): Record<string, unknown> {
+function normalizar(params: ListaQuery): Record<string, unknown> {
   const entradas = Object.entries(params)
     .filter(([, valor]) => valor !== undefined && valor !== null && valor !== '')
     .sort(([a], [b]) => a.localeCompare(b));

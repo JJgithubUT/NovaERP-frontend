@@ -43,13 +43,20 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
           @if (challenge(); as reto) {
             <form class="flex flex-col gap-4" [formGroup]="otpForm" (ngSubmit)="submitOtp()">
               @if (reto.mfa === 'enroll') {
-                <div class="flex flex-col items-center gap-2 rounded border border-outline-variant p-3">
+                <div
+                  class="flex flex-col items-center gap-2 rounded border border-outline-variant p-3"
+                >
                   <p class="text-body-sm text-on-surface">
                     Primer inicio de sesión: configure su segundo factor en una app tipo Google
                     Authenticator antes de confirmar el código.
                   </p>
                   @if (qrCode(); as qr) {
-                    <img [src]="qr" alt="Código QR para configurar el segundo factor" width="180" height="180" />
+                    <img
+                      [src]="qr"
+                      alt="Código QR para configurar el segundo factor"
+                      width="180"
+                      height="180"
+                    />
                   }
                   <p class="break-all font-mono text-mono-sm text-on-surface-variant">
                     {{ reto.secret }}
