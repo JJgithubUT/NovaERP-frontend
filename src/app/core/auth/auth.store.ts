@@ -35,9 +35,9 @@ export class AuthStore {
   });
 
   /** Tenant del token. Es el que gobierna el enrutamiento (Flujo 2). */
-  readonly tenantSlug = computed(() => this.session()?.tenant_slug ?? null);
+  readonly tenantSlug = computed(() => this.session()?.tid ?? null);
 
-  readonly usuarioId = computed(() => this.session()?.usuario_id ?? null);
+  readonly usuarioId = computed(() => this.session()?.sub ?? null);
 
   /**
    * Hay token y todavía no expiró. Ojo: es una comprobación optimista de UI, no

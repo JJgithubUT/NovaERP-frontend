@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { toDataURL } from 'qrcode';
 import type { LoginChallengeResponse } from '../../../api/models';
 import { isApiError } from '../../../core/errors/api-error.model';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -42,11 +43,14 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
           @if (challenge(); as reto) {
             <form class="flex flex-col gap-4" [formGroup]="otpForm" (ngSubmit)="submitOtp()">
               @if (reto.mfa === 'enroll') {
-                <div class="flex flex-col gap-2 rounded border border-outline-variant p-3">
+                <div class="flex flex-col items-center gap-2 rounded border border-outline-variant p-3">
                   <p class="text-body-sm text-on-surface">
                     Primer inicio de sesión: configure su segundo factor en una app tipo Google
                     Authenticator antes de confirmar el código.
                   </p>
+                  @if (qrCode(); as qr) {
+                    <img [src]="qr" alt="Código QR para configurar el segundo factor" width="180" height="180" />
+                  }
                   <p class="break-all font-mono text-mono-sm text-on-surface-variant">
                     {{ reto.secret }}
                   </p>
@@ -216,6 +220,7 @@ export class LoginPage {
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly challenge = signal<LoginChallengeResponse | null>(null);
+  readonly qrCode = signal<string | null>(null);
 
   readonly form = this.fb.group({
     tenant_slug: this.fb.control('', Validators.required),
@@ -234,7 +239,12 @@ export class LoginPage {
     this.errorMessage.set(null);
 
     try {
-      this.challenge.set(await this.auth.login(this.form.getRawValue()));
+      const reto = await this.auth.login(this.form.getRawValue());
+      this.challenge.set(reto);
+
+      if (reto.mfa === 'enroll' && reto.otpauth_uri) {
+        this.qrCode.set(await toDataURL(reto.otpauth_uri));
+      }
     } catch (error) {
       this.errorMessage.set(isApiError(error) ? error.message : 'No se pudo iniciar sesión.');
     } finally {
@@ -262,6 +272,7 @@ export class LoginPage {
 
   volverACredenciales(): void {
     this.challenge.set(null);
+    this.qrCode.set(null);
     this.errorMessage.set(null);
     this.otpForm.reset();
   }

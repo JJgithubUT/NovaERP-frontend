@@ -20,11 +20,11 @@ export function decodeJwt(token: string): JwtPayload | null {
     const parsed: unknown = JSON.parse(json);
     if (typeof parsed !== 'object' || parsed === null) return null;
 
-    const { usuario_id, tenant_slug, exp } = parsed as Record<string, unknown>;
-    if (typeof usuario_id !== 'string' || typeof tenant_slug !== 'string') return null;
+    const { sub, tid, exp } = parsed as Record<string, unknown>;
+    if (typeof sub !== 'string' || typeof tid !== 'string') return null;
     if (typeof exp !== 'number') return null;
 
-    return { usuario_id, tenant_slug, exp };
+    return { sub, tid, exp };
   } catch {
     return null;
   }

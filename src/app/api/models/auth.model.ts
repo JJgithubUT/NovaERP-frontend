@@ -37,8 +37,10 @@ export interface OtpRequest {
 
 /** Payload del JWT. Se lee sin verificar firma: el backend es quien valida. */
 export interface JwtPayload {
-  usuario_id: Uuid;
-  tenant_slug: string;
+  /** Id del usuario (claim estándar `sub`). */
+  sub: Uuid;
+  /** Slug del tenant (claim `tid`). */
+  tid: string;
   /** Expiración en segundos desde epoch (no milisegundos). */
   exp: number;
 }
