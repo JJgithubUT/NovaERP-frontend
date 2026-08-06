@@ -55,6 +55,14 @@ export class AuthStore {
   readonly tenant = computed(() => this._me()?.tenant ?? null);
   readonly roles = computed(() => this._me()?.roles ?? []);
 
+  /**
+   * Rol de sistema con bypass. Hay que consultarlo **además** de `hasPermiso`:
+   * un `TENANT_ADMIN` autoriza cualquier cosa sin que su `permisos` liste nada,
+   * así que comprobar solo el permiso lo dejaría fuera de sus propias
+   * pantallas de administración.
+   */
+  readonly esAdmin = computed(() => this._me()?.es_admin === true);
+
   /** Módulos habilitados del tenant. Fuente del sidebar dinámico. */
   readonly modulos = computed<readonly Modulo[]>(() => this._me()?.modulos ?? []);
 
@@ -90,9 +98,14 @@ export class AuthStore {
     localStorage.removeItem(ME_KEY);
   }
 
-  /** ¿El usuario tiene este permiso? Los guards de ruta se apoyan en esto. */
+  /**
+   * ¿El usuario tiene este permiso? Los guards de ruta se apoyan en esto.
+   *
+   * Un administrador de tenant pasa siempre: su rol de sistema tiene bypass en
+   * el backend, y `permisos` puede llegar vacío aunque lo pueda todo.
+   */
   hasPermiso(codigo: string): boolean {
-    return this.permisoCodigos().has(codigo);
+    return this.esAdmin() || this.permisoCodigos().has(codigo);
   }
 
   hasAnyPermiso(codigos: readonly string[]): boolean {

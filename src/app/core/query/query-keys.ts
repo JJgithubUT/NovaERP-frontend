@@ -26,7 +26,14 @@ export type Recurso =
   | 'ordenes-compra'
   | 'recepciones'
   | 'cuentas-por-pagar'
-  | 'config-aprobacion';
+  | 'config-aprobacion'
+  | 'usuarios'
+  | 'roles'
+  | 'permisos'
+  | 'sesiones'
+  | 'config-seguridad'
+  | 'bitacora'
+  | 'actividad';
 
 /**
  * Cualquier objeto de filtros de listado.

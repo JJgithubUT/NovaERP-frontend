@@ -1,5 +1,5 @@
 import type { Routes } from '@angular/router';
-import { moduloGuard } from './core/auth/guards/permission.guard';
+import { moduloGuard, permisoGuard } from './core/auth/guards/permission.guard';
 
 /**
  * Rutas de dentro del shell, ya con tenant resuelto.
@@ -31,6 +31,21 @@ export const tenantRoutes: Routes = [
     path: 'compras',
     canMatch: [moduloGuard('COMPRAS')],
     loadChildren: () => import('./features/compras/compras.routes').then((m) => m.comprasRoutes),
+  },
+  /**
+   * Cuenta y administración no cuelgan de un módulo contratado: la primera es
+   * autoservicio para cualquier usuario, la segunda va por permiso. Por eso no
+   * llevan `moduloGuard` — llevaría a un 404 en tenants que sí deben verlas.
+   */
+  {
+    path: 'cuenta',
+    loadChildren: () => import('./features/cuenta/cuenta.routes').then((m) => m.cuentaRoutes),
+  },
+  {
+    path: 'administracion',
+    canMatch: [permisoGuard('core:usuarios:leer')],
+    loadChildren: () =>
+      import('./features/administracion/administracion.routes').then((m) => m.administracionRoutes),
   },
   { path: '**', redirectTo: '/404' },
 ];

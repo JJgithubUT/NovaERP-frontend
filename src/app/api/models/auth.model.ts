@@ -54,6 +54,7 @@ export interface MeUsuario {
   correo: string;
   estado: UsuarioEstado;
   mfa_enrolado: boolean;
+  ultimo_acceso?: string | null;
 }
 
 export interface MeTenant {
@@ -82,6 +83,12 @@ export interface MeResponse {
   usuario: MeUsuario;
   tenant: MeTenant;
   roles: string[];
+  /**
+   * Rol de sistema con bypass: autoriza cualquier cosa sin pasar por el
+   * catálogo de permisos. Es lo que decide si se muestra la administración,
+   * porque un `TENANT_ADMIN` puede tener `permisos` vacío y aun así poder todo.
+   */
+  es_admin?: boolean;
   /** Puede venir vacío aunque haya roles, si `rol_permiso` no está poblado. */
   permisos: Permiso[];
   modulos: Modulo[];

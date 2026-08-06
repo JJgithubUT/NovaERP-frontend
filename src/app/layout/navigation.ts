@@ -47,6 +47,39 @@ const MODULOS: Readonly<Record<string, RutaModulo>> = {
  * pintar. La intersección es la clave: ni módulos sin pantallas, ni pantallas
  * sin módulo contratado.
  */
+/**
+ * Entradas que no vienen de un módulo contratado.
+ *
+ * «Mi cuenta» la ve todo el mundo: el perfil y las sesiones propias son
+ * autoservicio y no dependen de ningún permiso (FLUJO-USUARIOS §5).
+ * «Administración» solo aparece para quien pueda leer el directorio, que es la
+ * puerta de entrada del resto de pantallas de admin.
+ *
+ * Van aparte de `construirNavegacion` porque su condición no es tener un
+ * módulo: mezclarlas ahí obligaría a inventar módulos falsos para que salieran.
+ */
+export function construirNavegacionSistema(
+  tenantSlug: string | null,
+  puedeAdministrar: boolean,
+): readonly NavItem[] {
+  if (!tenantSlug) return [];
+
+  const items: NavItem[] = [
+    { codigo: 'CUENTA', label: 'Mi cuenta', icon: 'badge', link: ['/', tenantSlug, 'cuenta'] },
+  ];
+
+  if (puedeAdministrar) {
+    items.push({
+      codigo: 'ADMINISTRACION',
+      label: 'Administración',
+      icon: 'group',
+      link: ['/', tenantSlug, 'administracion'],
+    });
+  }
+
+  return items;
+}
+
 export function construirNavegacion(
   modulos: readonly Modulo[],
   tenantSlug: string | null,

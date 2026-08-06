@@ -7,7 +7,7 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { OfflineBannerComponent } from '../offline-banner/offline-banner.component';
 import { ToastHostComponent } from '../../shared/ui/toast/toast-host.component';
 import { UpdatePromptComponent } from '../update-prompt/update-prompt.component';
-import { construirNavegacion } from '../navigation';
+import { construirNavegacion, construirNavegacionSistema } from '../navigation';
 
 /**
  * El "Application Shell" del Flujo 1: la estructura que el Service Worker sirve
@@ -84,6 +84,21 @@ import { construirNavegacion } from '../navigation';
             </a>
           } @empty {
             <p class="px-3 text-label-md text-on-surface-variant">Sin módulos habilitados.</p>
+          }
+
+          <hr class="my-3 border-outline-variant" />
+
+          @for (item of navegacionSistema(); track item.codigo) {
+            <a
+              [routerLink]="item.link"
+              routerLinkActive="!bg-surface-container-high !text-primary !border-primary-container font-bold"
+              #activoSistema="routerLinkActive"
+              class="flex items-center gap-3 rounded-md border-l-4 border-transparent px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+              (click)="menuAbierto.set(false)"
+            >
+              <app-icon [name]="item.icon" [filled]="activoSistema.isActive" />
+              <span>{{ item.label }}</span>
+            </a>
           }
         </nav>
 
@@ -179,6 +194,15 @@ export class ShellLayout {
   /** El sidebar es un derivado puro de los módulos del tenant. */
   protected readonly navegacion = computed(() =>
     construirNavegacion(this.store.modulos(), this.tenantSlug()),
+  );
+
+  /**
+   * Cuenta y administración no dependen de módulos contratados sino de quién
+   * eres: la primera la ve todo el mundo, la segunda solo quien pueda leer el
+   * directorio de usuarios.
+   */
+  protected readonly navegacionSistema = computed(() =>
+    construirNavegacionSistema(this.tenantSlug(), this.store.hasPermiso('core:usuarios:leer')),
   );
 
   /**

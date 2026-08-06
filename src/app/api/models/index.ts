@@ -1,5 +1,6 @@
 export * from './common.model';
 export * from './auth.model';
+export * from './core.model';
 export * from './producto.model';
 export * from './almacen.model';
 export * from './inventario.model';
