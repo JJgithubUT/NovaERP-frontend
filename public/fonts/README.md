@@ -27,16 +27,41 @@ cirílico, el griego y el vietnamita son peso muerto para un ERP en español.
 ## El icon font está subseteado
 
 La fuente completa de Material Symbols pesa varios MB, inaceptable para
-precachear. Está subseteada a los **109 iconos** que usan las plantillas de
-`templatesejemplos/`, y así pesa 71 kB.
+precachear. Está subseteada a los **111 iconos** que usa la app, y así pesa
+73 kB.
 
 **Si usas un icono que no esté en el subset, no se verá** — aparecerá su nombre
-en texto. Para regenerarla con iconos nuevos:
+en texto, y nada falla ruidosamente: el build pasa y el error solo se ve en
+pantalla. Para comprobarlo sin mirar una a una, mide el ancho renderizado con
+el dev server levantado: un ligature resuelto ocupa 1em (20 px a `font-size:
+20px`); uno que cayó a texto ocupa varias veces más.
+
+```js
+// En la consola del navegador, sobre la app cargada.
+const s = document.createElement('span');
+s.className = 'icon'; s.style.fontSize = '20px'; s.textContent = 'visibility';
+document.body.append(s);
+s.getBoundingClientRect().width;  // ~20 = bien · ~200 = falta en el subset
+```
+
+Para regenerarla con iconos nuevos:
 
 ```bash
-# 1. Lista los iconos usados (o añade los tuyos a mano, separados por coma)
-ICONS=$(grep -ohE 'material-symbols-outlined[^>]*>[a-z_0-9]+<' templatesejemplos/*/code.html \
-  | sed -E 's/.*>([a-z_0-9]+)<.*/\1/' | sort -u | tr '\n' ',' | sed 's/,$//')
+# 1. Lista los iconos: los de las plantillas MÁS los que usa el código de la app.
+#
+#    Ojo: durante mucho tiempo esta lista salía solo de templatesejemplos/, y por
+#    eso faltaban `light_mode` y `visibility` — se usan en el shell y en el login
+#    pero en ninguna plantilla, así que se veían como texto literal. Si vuelves a
+#    generar la lista, incluye siempre las dos fuentes.
+#    El grep de la app tiene que cubrir las tres formas en que se nombra un
+#    icono, no solo la estática: `name="x"`, el binding `[name]="c ? 'x' : 'y'"`
+#    y los mapas de navegación (`icon: 'x'`). Justamente los dos que faltaban
+#    eran dinámicos, y un grep de `name="…"` a secas los vuelve a perder.
+PLANTILLAS=$(grep -ohE 'material-symbols-outlined[^>]*>[a-z_0-9]+<' templatesejemplos/*/code.html \
+  | sed -E 's/.*>([a-z_0-9]+)<.*/\1/')
+APP=$(grep -rhoE "name=\"[a-z_0-9]+\"|\[name\]=\"[^\"]*\"|icono?: '[a-z_0-9]+'" src/app --include='*.ts' \
+  | grep -oE "\"[a-z_0-9]+\"|'[a-z_0-9]+'" | tr -d "\"'")
+ICONS=$(printf '%s\n%s\n' "$PLANTILLAS" "$APP" | sort -u | tr '\n' ',' | sed 's/,$//')
 
 # 2. Pide el CSS con la fuente subseteada (hace falta UA de navegador)
 curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36" \

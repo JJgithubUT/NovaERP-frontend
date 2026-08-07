@@ -11,6 +11,26 @@ export const administracionRoutes: Routes = [
         title: 'Usuarios · NovaERP',
         loadComponent: () => import('./usuarios/usuarios.page').then((m) => m.UsuariosPage),
       },
+      {
+        path: 'roles',
+        title: 'Roles · NovaERP',
+        loadComponent: () => import('./roles/roles.page').then((m) => m.RolesPage),
+      },
+      {
+        path: 'seguridad',
+        title: 'Seguridad · NovaERP',
+        loadComponent: () => import('./seguridad/seguridad.page').then((m) => m.SeguridadPage),
+      },
+      {
+        path: 'bitacora',
+        title: 'Bitácora · NovaERP',
+        loadComponent: () => import('./bitacora/bitacora.page').then((m) => m.BitacoraPage),
+      },
+      {
+        path: 'actividad',
+        title: 'Actividad · NovaERP',
+        loadComponent: () => import('./actividad/actividad.page').then((m) => m.ActividadPage),
+      },
     ],
   },
 ];

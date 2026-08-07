@@ -2,14 +2,19 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth.store';
 
-const PESTANAS = [{ segmento: 'usuarios', label: 'Usuarios' }] as const;
-
 /**
- * Administración del tenant.
- *
- * Por ahora solo el directorio de usuarios; roles, políticas de seguridad y
- * bitácora entran en la siguiente tanda y añadirán sus pestañas aquí.
+ * De lo concreto a lo transversal: quién entra, con qué alcance, bajo qué
+ * reglas, y qué quedó registrado.
  */
+const PESTANAS = [
+  { segmento: 'usuarios', label: 'Usuarios' },
+  { segmento: 'roles', label: 'Roles' },
+  { segmento: 'seguridad', label: 'Seguridad' },
+  { segmento: 'bitacora', label: 'Bitácora' },
+  { segmento: 'actividad', label: 'Actividad' },
+] as const;
+
+/** Administración del tenant: usuarios, roles, políticas y auditoría. */
 @Component({
   selector: 'app-administracion-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
