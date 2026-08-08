@@ -3,11 +3,13 @@ import { QueryClient, injectMutation, injectQuery } from '@tanstack/angular-quer
 import {
   PAGE_SIZE_DEFAULT,
   type RevocacionResponse,
+  type RolesDeUsuario,
   type Usuario,
   type UsuarioActualizado,
   type UsuarioCreado,
   type UsuarioCreate,
   type UsuarioEstado,
+  type Uuid,
 } from '../../../api/models';
 import { CoreApi } from '../../../api/services/core.api';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -28,6 +30,7 @@ import {
   puedeSuspender,
   tonoUsuario,
 } from '../administracion.labels';
+import { RolesUsuarioModal } from './roles-usuario.modal';
 import { TokenActivacionModal } from './token-activacion.modal';
 import { UsuarioFormModal } from './usuario-form.modal';
 
@@ -57,6 +60,7 @@ type AccionCritica = 'suspender' | 'reset-mfa' | 'cerrar-sesiones';
     FilaMensajeComponent,
     IconComponent,
     PaginacionComponent,
+    RolesUsuarioModal,
     TokenActivacionModal,
     UsuarioFormModal,
   ],
@@ -144,6 +148,10 @@ type AccionCritica = 'suspender' | 'reset-mfa' | 'cerrar-sesiones';
                         Editar
                       </button>
 
+                      <button type="button" class="btn-fila" (click)="abrirRoles(usuario)">
+                        Roles
+                      </button>
+
                       @if (puedeReactivarlo(usuario.estado)) {
                         <button
                           type="button"
@@ -225,6 +233,19 @@ type AccionCritica = 'suspender' | 'reset-mfa' | 'cerrar-sesiones';
       />
     }
 
+    @if (enRoles(); as usuario) {
+      <app-roles-usuario-modal
+        [usuario]="usuario"
+        [rolesActuales]="rolesFrescos()"
+        [asignando]="asignacion.isPending()"
+        [revocando]="revocandoId()"
+        [error]="errorRoles()"
+        (asignar)="asignarRoles($event)"
+        (revocar)="revocarRol($event)"
+        (cerrar)="cerrarRoles()"
+      />
+    }
+
     @if (tokenEmitido(); as emitido) {
       <app-token-activacion-modal
         [titulo]="emitido.titulo"
@@ -257,6 +278,15 @@ export class UsuariosPage {
     destinatario: string;
     token: string;
   } | null>(null);
+
+  protected readonly enRoles = signal<Usuario | null>(null);
+  /**
+   * Roles del usuario según la última mutación. Es más fiable que la fila de la
+   * tabla, que solo se refresca cuando vuelve el listado, y evita que el
+   * diálogo se quede un instante mostrando el conjunto anterior.
+   */
+  protected readonly rolesFrescos = signal<RolesDeUsuario['roles'] | null>(null);
+  protected readonly revocandoId = signal<Uuid | null>(null);
 
   private readonly miId = computed(() => this.store.usuarioId());
 
@@ -351,6 +381,26 @@ export class UsuariosPage {
     },
   }));
 
+  protected readonly asignacion = injectMutation(() => ({
+    mutationFn: ({ id, roles }: { id: Uuid; roles: Uuid[] }) => this.api.asignarRoles(id, roles),
+    onSuccess: (resultado: RolesDeUsuario) => {
+      this.rolesFrescos.set(resultado.roles);
+      this.toasts.exito('Roles asignados.');
+      this.refrescar();
+    },
+  }));
+
+  protected readonly revocacion = injectMutation(() => ({
+    mutationFn: ({ id, rolId }: { id: Uuid; rolId: Uuid }) => this.api.revocarRol(id, rolId),
+    onSuccess: (resultado: RolesDeUsuario) => {
+      this.rolesFrescos.set(resultado.roles);
+      this.toasts.exito('Rol revocado.');
+      this.refrescar();
+    },
+    // Se limpia pase lo que pase: si no, un 422 dejaría la fila en «Revocando…».
+    onSettled: () => this.revocandoId.set(null),
+  }));
+
   protected readonly fechaHora = formatFechaHora;
   protected readonly tono = tonoUsuario;
   protected readonly puedeSuspenderlo = puedeSuspender;
@@ -440,6 +490,41 @@ export class UsuariosPage {
 
   protected reactivar(usuario: Usuario): void {
     this.reactivacion.mutate(usuario);
+  }
+
+  protected abrirRoles(usuario: Usuario): void {
+    this.asignacion.reset();
+    this.revocacion.reset();
+    this.rolesFrescos.set(null);
+    this.revocandoId.set(null);
+    this.enRoles.set(usuario);
+  }
+
+  protected cerrarRoles(): void {
+    this.enRoles.set(null);
+    this.rolesFrescos.set(null);
+  }
+
+  protected asignarRoles(roles: Uuid[]): void {
+    const usuario = this.enRoles();
+    if (!usuario) return;
+
+    this.revocacion.reset();
+    this.asignacion.mutate({ id: usuario.id, roles });
+  }
+
+  protected revocarRol(rol: { id: Uuid }): void {
+    const usuario = this.enRoles();
+    if (!usuario) return;
+
+    this.asignacion.reset();
+    this.revocandoId.set(rol.id);
+    this.revocacion.mutate({ id: usuario.id, rolId: rol.id });
+  }
+
+  /** El error de la última de las dos operaciones que se haya intentado. */
+  protected errorRoles(): unknown {
+    return this.asignacion.error() ?? this.revocacion.error();
   }
 
   protected pedirConfirmacion(usuario: Usuario, accion: AccionCritica): void {

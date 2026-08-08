@@ -13,8 +13,15 @@ import { AuthService } from '../auth/auth.service';
  * Un 401 en el propio login o en el OTP no es una sesión expirada sino
  * credenciales/código malos: ahí no hay que hacer logout, el formulario ya
  * muestra el mensaje.
+ *
+ * `/api/auth/logout/` está en la lista por una razón distinta y más delicada:
+ * es la petición que `AuthService.logout()` hace para revocar la sesión en el
+ * servidor. Si respondiera 401 (token ya caducado, sesión revocada desde otro
+ * dispositivo) y la tratáramos como sesión expirada, llamaríamos a `logout()`
+ * desde dentro de `logout()` — recursión infinita. Además sería redundante:
+ * quien la disparó ya está cerrando la sesión.
  */
-const RUTAS_SIN_SESION = ['/api/auth/login/', '/api/auth/otp/'];
+const RUTAS_SIN_SESION = ['/api/auth/login/', '/api/auth/otp/', '/api/auth/logout/'];
 
 export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -28,7 +35,9 @@ export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (esSesionExpirada) {
         // Sin await: no queremos retrasar la propagación del error al caller.
-        void auth.logout();
+        // Sin revocar: el 401 significa que el backend ya dio la sesión por
+        // cerrada, así que no hay nada que revocar.
+        void auth.logout({ revocar: false });
       }
 
       return throwError(() => error);

@@ -1,9 +1,9 @@
 import type { Routes } from '@angular/router';
 
 /**
- * Las ocho vistas cuelgan de un layout común que pinta la cabecera y las
+ * Las nueve vistas cuelgan de un layout común que pinta la cabecera y las
  * pestañas. Cada una es su propio chunk: entrar a Inventario no descarga las
- * ocho, solo la que se abre.
+ * nueve, solo la que se abre.
  */
 export const inventarioRoutes: Routes = [
   {
@@ -30,6 +30,11 @@ export const inventarioRoutes: Routes = [
         path: 'kardex',
         title: 'Kardex · NovaERP',
         loadComponent: () => import('./kardex/kardex.page').then((m) => m.KardexPage),
+      },
+      {
+        path: 'valuacion',
+        title: 'Valuación · NovaERP',
+        loadComponent: () => import('./valuacion/valuacion.page').then((m) => m.ValuacionPage),
       },
       {
         path: 'movimientos',

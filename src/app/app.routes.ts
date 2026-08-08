@@ -29,6 +29,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login.page').then((m) => m.LoginPage),
   },
   {
+    /**
+     * Pública y **sin `guestGuard`**: quien activa su cuenta no tiene sesión,
+     * pero puede quedarle un token viejo en este navegador. Mandarlo a su
+     * tenant por eso le impediría canjear el código.
+     */
+    path: 'activar',
+    loadComponent: () => import('./features/auth/activar/activar.page').then((m) => m.ActivarPage),
+  },
+  {
     path: '404',
     loadComponent: () =>
       import('./features/errors/not-found/not-found.page').then((m) => m.NotFoundPage),

@@ -2,8 +2,13 @@ import type { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthStore } from '../auth/auth.store';
 
-/** Login y OTP son los únicos endpoints que no llevan (ni deben llevar) token: todavía no existe sesión cuando se llaman. */
-const RUTAS_PUBLICAS = ['/api/auth/login/', '/api/auth/otp/'];
+/**
+ * Endpoints que no llevan (ni deben llevar) token: cuando se llaman todavía no
+ * existe sesión. `activar/` entra aquí por lo mismo — la autoriza el token de
+ * un solo uso, no un JWT—, y además evita mandar la credencial de quien tuviera
+ * una sesión abierta en este navegador a una operación que no es suya.
+ */
+const RUTAS_PUBLICAS = ['/api/auth/login/', '/api/auth/otp/', '/api/auth/activar/'];
 
 /**
  * Inyecta `Authorization: Bearer <JWT>` en toda petición saliente al backend.

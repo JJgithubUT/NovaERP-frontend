@@ -57,10 +57,39 @@ export class AuthService {
    * 401. Limpia la caché de queries además del store: si no, el siguiente
    * usuario que entre en este dispositivo vería por un instante los datos del
    * anterior renderizados desde caché.
+   *
+   * `revocar` decide si además se cierra la sesión **en el servidor** (RF-17).
+   * Va en `true` cuando sale el usuario y en `false` cuando el disparador es un
+   * 401: ahí la sesión ya está muerta en el backend y la petición solo serviría
+   * para recibir otro 401.
+   *
+   * La limpieza local ocurre pase lo que pase. Si la revocación falla —sin red,
+   * el token ya caducó, el servidor no responde— el usuario igual sale de la
+   * aplicación: dejarlo dentro por no poder avisar al backend sería el peor de
+   * los dos resultados.
    */
-  async logout(redirectTo: string = '/login'): Promise<void> {
+  async logout({ redirectTo = '/login', revocar = true } = {}): Promise<void> {
+    // Antes de `store.clear()`: el Bearer que necesita esta petición sale del
+    // store, y una vez limpiado ya no habría token que revocar.
+    if (revocar && this.store.token()) {
+      await this.revocarSesion();
+    }
+
     this.store.clear();
     this.queryClient.clear();
     await this.router.navigateByUrl(redirectTo, { replaceUrl: true });
+  }
+
+  /**
+   * Revocación best-effort del `jti` en curso. El backend la define como
+   * idempotente, así que reintentar o llegar tarde no rompe nada.
+   */
+  private async revocarSesion(): Promise<void> {
+    try {
+      await firstValueFrom(this.http.post(`${this.baseUrl}/api/auth/logout/`, {}));
+    } catch {
+      // Silencio deliberado: el cierre local no es negociable y no hay nada
+      // que el usuario pueda hacer con este error.
+    }
   }
 }

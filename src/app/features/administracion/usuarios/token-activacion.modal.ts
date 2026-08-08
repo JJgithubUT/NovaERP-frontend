@@ -31,6 +31,10 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
           No se puede volver a consultar. Cópialo y hazlo llegar a
           <strong>{{ destinatario() }}</strong> si no le llega por correo.
         </p>
+        <p class="text-body-sm">
+          Se canjea en <code class="font-mono">{{ urlActivar }}</code
+          >, sin necesidad de iniciar sesión.
+        </p>
       </div>
 
       <div
@@ -62,6 +66,9 @@ export class TokenActivacionModal {
   readonly token = input.required<string>();
 
   readonly cerrar = output<void>();
+
+  /** Absoluta: el destinatario recibe esto por fuera de la app, no un enlace interno. */
+  protected readonly urlActivar = `${location.origin}/activar`;
 
   protected readonly copiado = signal(false);
 

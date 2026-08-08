@@ -8,11 +8,13 @@ interface Pestana {
 }
 
 /**
- * Las siete vistas del módulo, en el orden en que se usan: primero consultar
- * (stock), luego mantener los catálogos, y al final la operación diaria.
+ * Las nueve vistas del módulo, en el orden en que se usan: primero consultar
+ * (stock y su valuación), luego mantener los catálogos, y al final la operación
+ * diaria.
  */
 const PESTANAS: readonly Pestana[] = [
   { segmento: 'stock', label: 'Stock' },
+  { segmento: 'valuacion', label: 'Valuación' },
   { segmento: 'productos', label: 'Productos' },
   { segmento: 'almacenes', label: 'Almacenes' },
   { segmento: 'kardex', label: 'Kardex' },
