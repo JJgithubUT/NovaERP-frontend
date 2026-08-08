@@ -38,6 +38,30 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/activar/activar.page').then((m) => m.ActivarPage),
   },
   {
+    /**
+     * Portal de plataforma (SysAdmin). Superficie separada: su propia sesión, su
+     * propio layout y ninguna dependencia del tenant.
+     *
+     * El segmento es `admin` porque está en `core.dominio_reservado`: ningún
+     * tenant puede registrarse con ese slug, así que no puede colisionar con
+     * `:tenant`. Los guards viven dentro de sus rutas hijas.
+     */
+    path: 'admin',
+    loadChildren: () =>
+      import('./features/plataforma/plataforma.routes').then((m) => m.plataformaRoutes),
+  },
+  {
+    /**
+     * Canje del enlace de alta de una organización. Pública y **sin
+     * `guestGuard`**, por lo mismo que `activar`: quien la usa no tiene sesión,
+     * pero puede quedarle un token viejo en este navegador.
+     */
+    path: 'activar-organizacion',
+    title: 'Activar organización · NovaERP',
+    loadComponent: () =>
+      import('./features/auth/activar-tenant/activar-tenant.page').then((m) => m.ActivarTenantPage),
+  },
+  {
     path: '404',
     loadComponent: () =>
       import('./features/errors/not-found/not-found.page').then((m) => m.NotFoundPage),
@@ -54,8 +78,8 @@ export const routes: Routes = [
     children: [],
   },
   {
-    // El orden importa: 'login', '404' y '403' se declaran antes para que
-    // `:tenant` no se los coma tratándolos como slugs.
+    // El orden importa: 'login', 'admin', 'activar…', '404' y '403' se declaran
+    // antes para que `:tenant` no se los coma tratándolos como slugs.
     path: ':tenant',
     canMatch: [authGuard, tenantGuard],
     loadComponent: () => import('./layout/shell/shell.layout').then((m) => m.ShellLayout),

@@ -36,9 +36,27 @@
        *
        * Debe mantenerse en sintonía con esa clase: misma clave de storage y
        * mismo criterio ('system' = no hay clave guardada).
+       *
+       * Las pantallas de entrada van siempre en claro (ver
+       * core/theme/rutas-entrada.ts, que gobierna el resto de la vida de la
+       * página). Aquí se repite la lista porque este script corre antes de que
+       * exista un módulo que importar: sin ella, alguien en modo oscuro vería el
+       * login pintarse oscuro y aclararse un instante después.
        */
       (function () {
+        var RUTAS_ENTRADA = ['/login', '/admin/acceso', '/activar', '/activar-organizacion'];
+
+        function esRutaDeEntrada() {
+          var ruta = window.location.pathname;
+          if (ruta.length > 1 && ruta.charAt(ruta.length - 1) === '/') {
+            ruta = ruta.slice(0, -1);
+          }
+          return RUTAS_ENTRADA.indexOf(ruta) !== -1;
+        }
+
         try {
+          if (esRutaDeEntrada()) return;
+
           var guardada = localStorage.getItem('novaerp.theme');
           var oscuro =
             guardada === 'dark' ||

@@ -28,12 +28,24 @@ export class ThemeService {
   /** Lo que el SO pide ahora mismo. Se actualiza solo si el SO cambia. */
   private readonly systemPrefersDark = signal(consultarSistema());
 
-  /** El tema realmente aplicado, ya resuelto. */
-  readonly theme = computed<ResolvedTheme>(() => {
+  /**
+   * Las pantallas de entrada (login, activación) van siempre en claro: ahí
+   * todavía no se sabe quién está delante, y la preferencia del navegador es la
+   * de la última persona que lo usó. Lo gobierna `provideTemaDeEntrada`.
+   */
+  private readonly _forzarClaro = signal(false);
+
+  /** El tema que corresponde a la preferencia, sin contar el forzado. */
+  private readonly temaPreferido = computed<ResolvedTheme>(() => {
     const preference = this._preference();
     if (preference !== 'system') return preference;
     return this.systemPrefersDark() ? 'dark' : 'light';
   });
+
+  /** El tema realmente aplicado, ya resuelto. */
+  readonly theme = computed<ResolvedTheme>(() =>
+    this._forzarClaro() ? 'light' : this.temaPreferido(),
+  );
 
   readonly isDark = computed(() => this.theme() === 'dark');
 
@@ -61,9 +73,25 @@ export class ThemeService {
     }
   }
 
-  /** Alterna entre claro y oscuro partiendo de lo que se ve ahora. */
+  /**
+   * Alterna entre claro y oscuro partiendo de lo que se ve ahora.
+   *
+   * Se apoya en la preferencia y no en `isDark()`: con el tema forzado a claro,
+   * `isDark()` sería `false` aunque la preferencia sea oscura, y el toggle
+   * "cambiaría" a oscuro sin que nada se moviera en pantalla. Hoy no es
+   * alcanzable —el toggle vive en el shell y ahí no se fuerza nada— pero dejarlo
+   * dependiendo de un estado transitorio es una trampa para más adelante.
+   */
   toggle(): void {
-    this.set(this.isDark() ? 'light' : 'dark');
+    this.set(this.temaPreferido() === 'dark' ? 'light' : 'dark');
+  }
+
+  /**
+   * Fuerza el tema claro sin tocar la preferencia guardada. Al liberarlo, el
+   * usuario recupera exactamente lo que tenía.
+   */
+  forzarClaro(activo: boolean): void {
+    this._forzarClaro.set(activo);
   }
 
   private escucharSistema(): void {

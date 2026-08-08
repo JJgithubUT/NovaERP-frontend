@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toDataURL } from 'qrcode';
 import type { LoginChallengeResponse } from '../../../api/models';
 import { isApiError } from '../../../core/errors/api-error.model';
@@ -21,7 +21,7 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
 @Component({
   selector: 'app-login-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [ReactiveFormsModule, IconComponent, RouterLink],
   template: `
     <main class="grid min-h-dvh place-items-center bg-background p-6">
       <div class="w-full max-w-sm">
@@ -212,7 +212,14 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
           </div>
         </div>
 
-        <p class="mt-6 text-center text-label-md text-on-surface-variant">NovaERP · Sprint 1</p>
+        <!-- El SysAdmin no entra por aquí: su cuenta no vive en core.usuario y
+             su sesión es de otra superficie (/api/admin/login/). -->
+        <p class="mt-6 text-center text-label-md text-on-surface-variant">
+          ¿Administras la plataforma?
+          <a routerLink="/admin/acceso" class="font-semibold text-action hover:underline">
+            Portal de plataforma
+          </a>
+        </p>
       </div>
     </main>
   `,

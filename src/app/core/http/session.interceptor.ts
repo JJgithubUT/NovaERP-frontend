@@ -23,6 +23,14 @@ import { AuthService } from '../auth/auth.service';
  */
 const RUTAS_SIN_SESION = ['/api/auth/login/', '/api/auth/otp/', '/api/auth/logout/'];
 
+/**
+ * La superficie de plataforma tiene su propia sesión y su propio interceptor de
+ * 401 (`plataformaSessionInterceptor`). Un 401 ahí no dice nada sobre la sesión
+ * de tenant: tratarlo como tal echaría del ERP a un usuario por el simple hecho
+ * de tener abierta la pestaña del portal con un token vencido.
+ */
+const PREFIJO_PLATAFORMA = '/api/admin/';
+
 export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
 
@@ -31,6 +39,7 @@ export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
       const esSesionExpirada =
         isApiError(error) &&
         error.kind === 'auth' &&
+        !req.url.includes(PREFIJO_PLATAFORMA) &&
         !RUTAS_SIN_SESION.some((ruta) => req.url.includes(ruta));
 
       if (esSesionExpirada) {

@@ -189,6 +189,18 @@ export class UsuarioFormModal {
     return mensajeDeError(error);
   });
 
+  /**
+   * `form.valid` es una propiedad, no un signal: leerla dentro de un `computed`
+   * no crea dependencia, así que el valor memoizado se quedaba congelado en el
+   * primer cálculo —con el formulario vacío— y el botón de guardar no se
+   * habilitaba nunca por escribir. Solo se refrescaba de rebote, al marcar un
+   * rol, porque eso sí toca un signal.
+   *
+   * `statusChanges` es el que convierte VALID/INVALID en algo que el grafo puede
+   * seguir. No se resuelve dejando que el método se reevalúe en cada ciclo de
+   * detección: eso funcionaría por casualidad del momento en que Angular decide
+   * revisar la vista, no porque la dependencia esté declarada.
+   */
   protected readonly valido = computed(
     () => this.form.valid && (this.usuario() !== null || this.seleccionados().length > 0),
   );

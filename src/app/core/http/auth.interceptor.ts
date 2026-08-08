@@ -8,10 +8,25 @@ import { AuthStore } from '../auth/auth.store';
  * un solo uso, no un JWT—, y además evita mandar la credencial de quien tuviera
  * una sesión abierta en este navegador a una operación que no es suya.
  */
-const RUTAS_PUBLICAS = ['/api/auth/login/', '/api/auth/otp/', '/api/auth/activar/'];
+const RUTAS_PUBLICAS = [
+  '/api/auth/login/',
+  '/api/auth/otp/',
+  '/api/auth/activar/',
+  // Canje del enlace de alta de una organización: lo autoriza el token de un
+  // solo uso, y quien lo usa todavía no puede autenticarse.
+  '/api/auth/activar-tenant/',
+];
 
 /**
- * Inyecta `Authorization: Bearer <JWT>` en toda petición saliente al backend.
+ * Prefijo de la superficie de plataforma. El token de tenant **no** vale ahí
+ * —el backend responde 401— y mandarlo sería filtrar la credencial de un tenant
+ * a un endpoint que no es suyo. Su Bearer lo pone `plataformaInterceptor`.
+ */
+const PREFIJO_PLATAFORMA = '/api/admin/';
+
+/**
+ * Inyecta `Authorization: Bearer <JWT>` del tenant en toda petición saliente al
+ * backend.
  *
  * Deja pasar sin tocar las peticiones a otros orígenes: si la app pide un asset
  * a un CDN, mandarle el token del tenant sería una fuga de credenciales.
@@ -20,7 +35,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(AuthStore);
   const token = store.token();
 
-  if (!token || esRutaPublica(req.url) || !esApiPropia(req.url)) {
+  if (!token || esRutaPublica(req.url) || esDePlataforma(req.url) || !esApiPropia(req.url)) {
     return next(req);
   }
 
@@ -29,6 +44,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
 function esRutaPublica(url: string): boolean {
   return RUTAS_PUBLICAS.some((ruta) => url.includes(ruta));
+}
+
+function esDePlataforma(url: string): boolean {
+  return url.includes(PREFIJO_PLATAFORMA);
 }
 
 /**

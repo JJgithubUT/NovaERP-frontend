@@ -9,6 +9,26 @@ import type { JwtPayload } from '../../api/models';
  * real basándote solo en esto.
  */
 export function decodeJwt(token: string): JwtPayload | null {
+  const parsed = decodeClaims(token);
+  if (!parsed) return null;
+
+  const { sub, tid, exp } = parsed;
+  if (typeof sub !== 'string' || typeof tid !== 'string') return null;
+  if (typeof exp !== 'number') return null;
+
+  return { sub, tid, exp };
+}
+
+/**
+ * Claims crudos, sin interpretar. Existe porque hay **dos** formas de token en
+ * la aplicación: el de tenant lleva `tid` y el del portal de plataforma no
+ * (lleva `typ: 'sysadmin'` y `jti`). `decodeJwt` exige `tid`, así que devolvería
+ * `null` para un token de SysAdmin perfectamente válido.
+ *
+ * Cada superficie valida sus propios claims sobre esto; lo único compartido es
+ * el troceado y el Base64URL, que es lo que no tiene sentido duplicar.
+ */
+export function decodeClaims(token: string): Record<string, unknown> | null {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
 
@@ -16,15 +36,9 @@ export function decodeJwt(token: string): JwtPayload | null {
   if (!payload) return null;
 
   try {
-    const json = decodeBase64Url(payload);
-    const parsed: unknown = JSON.parse(json);
+    const parsed: unknown = JSON.parse(decodeBase64Url(payload));
     if (typeof parsed !== 'object' || parsed === null) return null;
-
-    const { sub, tid, exp } = parsed as Record<string, unknown>;
-    if (typeof sub !== 'string' || typeof tid !== 'string') return null;
-    if (typeof exp !== 'number') return null;
-
-    return { sub, tid, exp };
+    return parsed as Record<string, unknown>;
   } catch {
     return null;
   }

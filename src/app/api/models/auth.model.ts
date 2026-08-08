@@ -46,7 +46,19 @@ export interface JwtPayload {
 }
 
 export type UsuarioEstado = 'pendiente' | 'activo' | 'suspendido' | 'pendiente_verificacion';
-export type TenantEstado = 'activo' | 'suspendido' | 'baja_logica';
+
+/**
+ * `core.tenant_estado` completo. `pendiente` es el estado en el que nace una
+ * organización recién creada por el SysAdmin, antes de que su administrador
+ * inicial canjee el enlace de activación.
+ *
+ * En `MeTenant` no se verá nunca: el validador de sesión rechaza cualquier tenant
+ * que no esté `activo`, así que quien llega a tener un `me` está en un entorno
+ * activo por construcción. Está aquí, y no solo en el modelo de plataforma,
+ * porque el ENUM es uno y duplicarlo dejaría dos definiciones que pueden
+ * divergir.
+ */
+export type TenantEstado = 'activo' | 'pendiente' | 'suspendido' | 'baja_logica';
 
 export interface MeUsuario {
   id: Uuid;
