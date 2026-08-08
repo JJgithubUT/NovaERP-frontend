@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import type { OrdenCompra, OrdenCompraCreate } from '../../../api/models';
 import { campoDeError, mensajeDeError } from '../../../core/errors/mensaje-error';
 import {
@@ -75,7 +83,7 @@ import {
     </app-modal>
   `,
 })
-export class OrdenFormModal {
+export class OrdenFormModal implements OnInit {
   readonly orden = input<OrdenCompra | null>(null);
   readonly enviando = input(false);
   readonly error = input<unknown>(null);
@@ -102,7 +110,12 @@ export class OrdenFormModal {
     return proveedorOk && this.lineas().length > 0 && this.lineas().every(lineaOrdenEsValida);
   });
 
-  constructor() {
+  /**
+   * Los valores de los `input()` se asignan DESPUÉS de construir el componente,
+   * así que esto no puede vivir en el constructor: ahí el input todavía vale
+   * `null` y el formulario se quedaba vacío al editar.
+   */
+  ngOnInit(): void {
     const existente = this.orden();
     if (existente) {
       this.lineas.set(

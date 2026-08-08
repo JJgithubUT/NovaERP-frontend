@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import type { Cotizacion, CotizacionCreate } from '../../../api/models';
 import { campoDeError, mensajeDeError } from '../../../core/errors/mensaje-error';
 import { CampoComponent } from '../../../shared/ui/campo/campo.component';
@@ -114,7 +122,7 @@ import {
     </app-modal>
   `,
 })
-export class CotizacionFormModal {
+export class CotizacionFormModal implements OnInit {
   readonly cotizacion = input<Cotizacion | null>(null);
   readonly enviando = input(false);
   readonly error = input<unknown>(null);
@@ -155,7 +163,12 @@ export class CotizacionFormModal {
     );
   });
 
-  constructor() {
+  /**
+   * Los valores de los `input()` se asignan DESPUÉS de construir el componente,
+   * así que esto no puede vivir en el constructor: ahí el input todavía vale
+   * `null` y el formulario se quedaba vacío al editar.
+   */
+  ngOnInit(): void {
     const existente = this.cotizacion();
     if (existente) {
       this.descuento.set(existente.descuento_pct);

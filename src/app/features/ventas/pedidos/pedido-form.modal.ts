@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   inject,
   input,
@@ -134,7 +135,7 @@ const MAX_COTIZACIONES = 50;
     </app-modal>
   `,
 })
-export class PedidoFormModal {
+export class PedidoFormModal implements OnInit {
   private readonly api = inject(VentasApi);
   private readonly store = inject(AuthStore);
 
@@ -186,7 +187,12 @@ export class PedidoFormModal {
 
   protected readonly moneda = formatMoneda;
 
-  constructor() {
+  /**
+   * Los valores de los `input()` se asignan DESPUÉS de construir el componente,
+   * así que esto no puede vivir en el constructor: ahí el input todavía vale
+   * `null` y el formulario se quedaba vacío al editar.
+   */
+  ngOnInit(): void {
     const existente = this.pedido();
     if (existente) {
       this.origen.set('directo');

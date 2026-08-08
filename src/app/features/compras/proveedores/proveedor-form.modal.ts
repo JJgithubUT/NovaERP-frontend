@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import type { Proveedor, ProveedorCreate } from '../../../api/models';
 import { campoDeError, mensajeDeError } from '../../../core/errors/mensaje-error';
@@ -83,7 +91,7 @@ import { ModalComponent } from '../../../shared/ui/modal/modal.component';
     </app-modal>
   `,
 })
-export class ProveedorFormModal {
+export class ProveedorFormModal implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
 
   readonly proveedor = input<Proveedor | null>(null);
@@ -112,7 +120,12 @@ export class ProveedorFormModal {
     return mensajeDeError(error);
   });
 
-  constructor() {
+  /**
+   * Los valores de los `input()` se asignan DESPUÉS de construir el componente,
+   * así que esto no puede vivir en el constructor: ahí el input todavía vale
+   * `null` y el formulario se quedaba vacío al editar.
+   */
+  ngOnInit(): void {
     const existente = this.proveedor();
     if (existente) {
       this.form.setValue({

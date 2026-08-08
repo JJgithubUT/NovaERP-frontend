@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
-import type { Rol } from '../../../api/models';
+import type { Rol, Usuario } from '../../../api/models';
 import { CoreApi } from '../../../api/services/core.api';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { crearQueryClient } from '../../../core/query/query.provider';
@@ -31,15 +31,16 @@ function tokenFalso(): string {
 /**
  * Regresión de un botón de guardar que no se habilitaba nunca.
  *
- * `valido` era un `computed` que leía `form.valid`, y eso es una propiedad, no un
- * signal: el grafo reactivo no la ve, así que el valor memoizado se quedaba
- * congelado en el primer cálculo —formulario vacío, inválido— y escribir en los
- * campos no lo despertaba. Solo se refrescaba de rebote al marcar un rol, que sí
- * toca un signal.
+ * `valido` era `computed(() => form.valid && (usuario() !== null ||
+ * seleccionados().length > 0))`. `form.valid` es una propiedad, no un signal, y
+ * encima estaba a la izquierda de un `&&`: con el formulario vacío —que es como
+ * nace el alta— el cortocircuito impedía llegar a los dos signals, así que el
+ * `computed` se registraba con **cero** dependencias y quedaba clavado en `false`
+ * durante toda la vida del modal. No había orden de acciones que lo despertara:
+ * el alta de usuarios no se podía completar desde la interfaz.
  *
- * El orden de los pasos de estas pruebas es el del bug: marcar el rol **antes**
- * de llenar los campos es lo que dejaba el botón muerto para siempre, porque el
- * único recálculo ocurría cuando el formulario todavía estaba incompleto.
+ * Por eso las pruebas recorren los dos órdenes —rol primero y campos primero—:
+ * los dos tienen que terminar con el botón habilitado.
  */
 describe('UsuarioFormModal · habilitación del botón de guardar', () => {
   function montar() {
@@ -165,6 +166,57 @@ describe('UsuarioFormModal · habilitación del botón de guardar', () => {
     });
 
     expect(componente.valido()).toBe(false);
+  });
+
+  it('rellena el formulario al editar un usuario existente', () => {
+    // El prellenado vivía en el constructor, donde los `input()` todavía valen
+    // `null`: los campos salían vacíos y guardar habría borrado los datos del
+    // usuario con cadenas en blanco.
+    const existente: Usuario = {
+      id: 'usuario-9',
+      correo: 'ana@acme.com',
+      nombre_completo: 'Ana Torres',
+      telefono: '5512345678',
+      puesto: 'Compras',
+      departamento: 'Operaciones',
+      estado: 'activo',
+      mfa_enrolado: true,
+      ultimo_acceso: null,
+      roles: ['Vendedor'],
+      created_at: '2026-01-01T00:00:00Z',
+    };
+
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideTanStackQuery(crearQueryClient()),
+        {
+          provide: CoreApi,
+          useValue: { listarRoles: () => Promise.reject(new Error('no debe pedirse')) },
+        },
+      ],
+    });
+    TestBed.inject(AuthStore).setSession(tokenFalso());
+
+    const fixture = TestBed.createComponent(UsuarioFormModal);
+    fixture.componentRef.setInput('usuario', existente);
+    fixture.detectChanges();
+
+    const componente = fixture.componentInstance as unknown as {
+      form: { getRawValue: () => Record<string, string> };
+      valido: () => boolean;
+    };
+
+    expect(componente.form.getRawValue()).toEqual({
+      nombre_completo: 'Ana Torres',
+      correo: 'ana@acme.com',
+      telefono: '5512345678',
+      puesto: 'Compras',
+      departamento: 'Operaciones',
+    });
+    // Al editar no hacen falta roles, así que se puede guardar de inmediato.
+    expect(componente.valido()).toBe(true);
   });
 
   it('vuelve a deshabilitarse si se desmarca el último rol', () => {

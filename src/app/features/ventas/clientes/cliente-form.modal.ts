@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import type { Cliente, ClienteCreate } from '../../../api/models';
 import { isApiError } from '../../../core/errors/api-error.model';
@@ -102,7 +110,7 @@ import { formatMoneda } from '../../../shared/utils/decimal.util';
     </app-modal>
   `,
 })
-export class ClienteFormModal {
+export class ClienteFormModal implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
 
   readonly cliente = input<Cliente | null>(null);
@@ -143,7 +151,12 @@ export class ClienteFormModal {
       : mensaje;
   });
 
-  constructor() {
+  /**
+   * Los valores de los `input()` se asignan DESPUÉS de construir el componente,
+   * así que esto no puede vivir en el constructor: ahí el input todavía vale
+   * `null` y el formulario se quedaba vacío al editar.
+   */
+  ngOnInit(): void {
     const existente = this.cliente();
     if (existente) {
       this.form.setValue({

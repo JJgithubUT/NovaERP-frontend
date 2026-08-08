@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import type { Producto, ProductoCreate } from '../../../api/models';
 import { campoDeError, mensajeDeError } from '../../../core/errors/mensaje-error';
@@ -118,7 +126,7 @@ import { decimalNoNegativo } from '../../../shared/forms/decimal.validator';
     </app-modal>
   `,
 })
-export class ProductoFormModal {
+export class ProductoFormModal implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
 
   /** `null` = alta. Con valor = edición. */
@@ -151,7 +159,12 @@ export class ProductoFormModal {
     return mensajeDeError(error);
   });
 
-  constructor() {
+  /**
+   * Los valores de los `input()` se asignan DESPUÉS de construir el componente,
+   * así que esto no puede vivir en el constructor: ahí el input todavía vale
+   * `null` y el formulario se quedaba vacío al editar.
+   */
+  ngOnInit(): void {
     // El componente se crea y se destruye con el `@if` del padre, así que
     // basta con sembrar el formulario una vez: no hay un caso en que el
     // `producto` cambie sin que el modal se haya recreado.

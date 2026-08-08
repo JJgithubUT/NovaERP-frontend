@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   inject,
   input,
@@ -93,7 +94,7 @@ import { SelectorPermisosComponent } from './selector-permisos.component';
     </app-modal>
   `,
 })
-export class RolFormModal {
+export class RolFormModal implements OnInit {
   private readonly api = inject(CoreApi);
   private readonly store = inject(AuthStore);
 
@@ -125,7 +126,12 @@ export class RolFormModal {
 
   protected readonly valido = computed(() => this.nombre().trim() !== '');
 
-  constructor() {
+  /**
+   * Los valores de los `input()` se asignan DESPUÉS de construir el componente,
+   * así que esto no puede vivir en el constructor: ahí el input todavía vale
+   * `null` y el formulario se quedaba vacío al editar.
+   */
+  ngOnInit(): void {
     const existente = this.rol();
     if (existente) {
       this.nombre.set(existente.nombre);
