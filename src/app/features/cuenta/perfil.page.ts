@@ -1,7 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { injectMutation } from '@tanstack/angular-query-experimental';
-import type { UsuarioUpdate } from '../../api/models';
+import type { UsuarioActualizado, UsuarioUpdate } from '../../api/models';
 import { CoreApi } from '../../api/services/core.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
@@ -76,7 +83,7 @@ import { ESTADO_USUARIO_LABEL, tonoUsuario } from '../administracion/administrac
               etiqueta="Teléfono"
               paraId="telefono"
               [error]="errorDe('telefono')"
-              ayuda="Escribe un número para actualizarlo. Si lo dejas en blanco, se conserva el que ya tuvieras."
+              ayuda="Arranca en blanco aunque ya tengas uno: tu propio teléfono no se puede consultar desde aquí. Escribe un número para actualizarlo; si lo dejas en blanco, se conserva el que tuvieras."
             >
               <input id="telefono" class="campo-control" formControlName="telefono" />
             </app-campo>
@@ -136,7 +143,12 @@ export class PerfilPage {
 
   protected readonly guardado = injectMutation(() => ({
     mutationFn: (datos: UsuarioUpdate) => this.api.editarUsuario(this.store.usuarioId()!, datos),
-    onSuccess: async () => {
+    onSuccess: async (usuario: UsuarioActualizado) => {
+      // La respuesta del PATCH es el ÚNICO sitio donde se puede leer el teléfono
+      // ya guardado: `/api/core/me/` no lo devuelve. Sembrar el campo con él es
+      // lo que convierte «lo escribí y al volver estaba vacío, no se guardó» en
+      // una confirmación visible de que sí quedó.
+      this.form.patchValue({ telefono: usuario.telefono ?? '' });
       this.toasts.exito('Datos actualizados.');
       // El nombre se pinta en el shell desde el `me` cacheado: sin recargarlo,
       // la cabecera seguiría mostrando el anterior hasta el próximo arranque.
@@ -159,14 +171,30 @@ export class PerfilPage {
   protected readonly tono = tonoUsuario;
 
   constructor() {
-    const usuario = this.store.usuario();
-    if (usuario && !this.sembrado()) {
-      this.form.setValue({
-        nombre_completo: usuario.nombre_completo,
-        telefono: '',
-      });
+    /**
+     * Siembra el nombre en cuanto llega el contexto del usuario, y solo la
+     * primera vez.
+     *
+     * Antes esto ocurría en el cuerpo del constructor, y ahí `store.usuario()`
+     * puede ser `null`: en un arranque en frío —sin el `me` cacheado en
+     * localStorage— el contexto llega después de construir el componente, así
+     * que el campo se quedaba vacío para siempre. Con `nombre_completo` marcado
+     * como obligatorio, eso además dejaba el botón deshabilitado y la pantalla
+     * sin salida.
+     *
+     * La guarda `sembrado` es la que impide que el `loadMe()` de después de
+     * guardar pise lo que se esté escribiendo.
+     *
+     * `patchValue` y no `setValue`: este efecto solo es dueño del nombre. El
+     * teléfono se gobierna aparte —ver `guardado`— y un `setValue` lo borraría.
+     */
+    effect(() => {
+      const usuario = this.store.usuario();
+      if (!usuario || this.sembrado()) return;
+
+      this.form.patchValue({ nombre_completo: usuario.nombre_completo });
       this.sembrado.set(true);
-    }
+    });
   }
 
   protected etiquetaEstado(estado: Parameters<typeof tonoUsuario>[0]): string {
