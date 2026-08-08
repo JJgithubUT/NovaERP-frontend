@@ -7,6 +7,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import type { Usuario, UsuarioCreate } from '../../../api/models';
@@ -201,9 +202,35 @@ export class UsuarioFormModal {
    * detección: eso funcionaría por casualidad del momento en que Angular decide
    * revisar la vista, no porque la dependencia esté declarada.
    */
-  protected readonly valido = computed(
-    () => this.form.valid && (this.usuario() !== null || this.seleccionados().length > 0),
-  );
+  /**
+   * Estado del formulario como signal. `form.valid` es una propiedad, y leerla
+   * dentro de un `computed` no crea dependencia: el grafo reactivo no se enteraba
+   * de que el formulario pasaba a válido.
+   */
+  private readonly estadoDelForm = toSignal(this.form.statusChanges, {
+    initialValue: this.form.status,
+  });
+
+  /**
+   * Habilita el botón de guardar.
+   *
+   * Las tres dependencias se leen SIN cortocircuito, y esa es la corrección de
+   * fondo. La versión anterior era `form.valid && (usuario() !== null ||
+   * seleccionados().length > 0)`: con el formulario vacío —que es como nace el
+   * alta— el `&&` cortaba antes de llegar a los signals, así que el `computed` se
+   * registraba con **cero** dependencias y quedaba congelado en `false` para toda
+   * la vida del modal. No era que tardara en despertar: no despertaba nunca, y el
+   * alta de usuarios no se podía completar desde la interfaz.
+   *
+   * Con `&&` sobre variables ya resueltas, el orden en que el usuario llene los
+   * campos o marque el rol deja de importar.
+   */
+  protected readonly valido = computed(() => {
+    const formularioValido = this.estadoDelForm() === 'VALID';
+    // El alta exige al menos un rol; al editar, los roles se cambian aparte.
+    const conRoles = this.usuario() !== null || this.seleccionados().length > 0;
+    return formularioValido && conRoles;
+  });
 
   constructor() {
     const existente = this.usuario();
