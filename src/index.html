@@ -44,7 +44,14 @@
        * login pintarse oscuro y aclararse un instante después.
        */
       (function () {
-        var RUTAS_ENTRADA = ['/login', '/admin/acceso', '/activar', '/activar-organizacion'];
+        var RUTAS_ENTRADA = [
+          '/login',
+          '/admin/acceso',
+          '/activar',
+          '/activar-organizacion',
+          '/recuperar',
+          '/restablecer',
+        ];
 
         function esRutaDeEntrada() {
           var ruta = window.location.pathname;

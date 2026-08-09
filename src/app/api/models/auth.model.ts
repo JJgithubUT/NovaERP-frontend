@@ -35,6 +35,35 @@ export interface OtpRequest {
   codigo: string;
 }
 
+/* --------------------------------------------- RF-18: contraseña olvidada */
+
+/**
+ * Pide el enlace de restablecimiento. Necesita la organización además del
+ * correo: el backend busca al usuario por la pareja `tenant__slug` + `correo`.
+ */
+export interface RecuperarPasswordRequest {
+  tenant_slug: string;
+  correo: string;
+}
+
+/** Canjea el token del enlace por una contraseña nueva. */
+export interface RestablecerPasswordRequest {
+  token: string;
+  password: string;
+}
+
+/**
+ * Los dos endpoints de RF-18 responden únicamente un `mensaje`.
+ *
+ * El de `recuperar` es **siempre el mismo** exista el correo o no (RN02): la
+ * respuesta no puede servir para averiguar quién tiene cuenta. Por eso la
+ * pantalla lo muestra tal cual en vez de redactar un «te hemos enviado un
+ * correo», que afirmaría más de lo que el backend está diciendo.
+ */
+export interface MensajeResponse {
+  mensaje: string;
+}
+
 /** Payload del JWT. Se lee sin verificar firma: el backend es quien valida. */
 export interface JwtPayload {
   /** Id del usuario (claim estándar `sub`). */

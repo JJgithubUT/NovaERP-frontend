@@ -62,6 +62,23 @@ export const routes: Routes = [
       import('./features/auth/activar-tenant/activar-tenant.page').then((m) => m.ActivarTenantPage),
   },
   {
+    /**
+     * RF-18. Las dos son públicas y **sin `guestGuard`**, igual que `activar`:
+     * quien las usa no tiene sesión, pero puede quedarle un token viejo en este
+     * navegador y mandarlo a su tenant le impediría recuperar la cuenta.
+     */
+    path: 'recuperar',
+    title: 'Restablecer contraseña · NovaERP',
+    loadComponent: () =>
+      import('./features/auth/recuperar/recuperar.page').then((m) => m.RecuperarPage),
+  },
+  {
+    path: 'restablecer',
+    title: 'Nueva contraseña · NovaERP',
+    loadComponent: () =>
+      import('./features/auth/restablecer/restablecer.page').then((m) => m.RestablecerPage),
+  },
+  {
     path: '404',
     loadComponent: () =>
       import('./features/errors/not-found/not-found.page').then((m) => m.NotFoundPage),

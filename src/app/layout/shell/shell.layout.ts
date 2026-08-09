@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
-import { ThemeService } from '../../core/theme/theme.service';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { MenuUsuarioComponent } from '../menu-usuario/menu-usuario.component';
 import { OfflineBannerComponent } from '../offline-banner/offline-banner.component';
 import { ToastHostComponent } from '../../shared/ui/toast/toast-host.component';
 import { UpdatePromptComponent } from '../update-prompt/update-prompt.component';
@@ -26,6 +26,7 @@ import { construirNavegacion, construirNavegacionSistema } from '../navigation';
     RouterLink,
     RouterLinkActive,
     IconComponent,
+    MenuUsuarioComponent,
     OfflineBannerComponent,
     ToastHostComponent,
     UpdatePromptComponent,
@@ -130,30 +131,10 @@ import { construirNavegacion, construirNavegacionSistema } from '../navigation';
                expone el parámetro search por catálogo, no uno transversal. -->
           <div class="hidden flex-1 md:block"></div>
 
-          <div class="flex items-center gap-1">
-            <button
-              type="button"
-              class="rounded-full p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low"
-              (click)="theme.toggle()"
-            >
-              <app-icon
-                [name]="theme.isDark() ? 'light_mode' : 'dark_mode'"
-                [label]="theme.isDark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
-              />
-            </button>
-
-            <div class="ml-2 flex items-center gap-2 border-l border-outline-variant pl-3">
-              <div
-                class="flex h-8 w-8 items-center justify-center rounded-full bg-surface-variant text-label-md font-semibold text-on-surface-variant"
-                aria-hidden="true"
-              >
-                {{ iniciales() }}
-              </div>
-              <span class="hidden text-body-sm text-on-surface-variant sm:block">
-                {{ store.usuario()?.nombre_completo }}
-              </span>
-            </div>
-          </div>
+          <!-- El tema vive dentro de este menú, no en un botón aparte: dos
+               controles para lo mismo a cuatro centímetros uno del otro obligan
+               a preguntarse en qué se diferencian. -->
+          <app-menu-usuario />
         </header>
 
         <app-offline-banner />
@@ -172,7 +153,6 @@ import { construirNavegacion, construirNavegacionSistema } from '../navigation';
 })
 export class ShellLayout {
   protected readonly store = inject(AuthStore);
-  protected readonly theme = inject(ThemeService);
   private readonly auth = inject(AuthService);
 
   protected readonly tenantSlug = this.store.tenantSlug;
@@ -204,21 +184,6 @@ export class ShellLayout {
   protected readonly navegacionSistema = computed(() =>
     construirNavegacionSistema(this.tenantSlug(), this.store.hasPermiso('core:usuarios:leer')),
   );
-
-  /**
-   * Iniciales en vez de una foto: el backend no expone avatar todavía. Las
-   * plantillas tiran de una imagen remota de placeholder, que además de no
-   * existir en nuestro dominio rompería el modo offline.
-   */
-  protected readonly iniciales = computed(() => {
-    const nombre = this.store.usuario()?.nombre_completo?.trim();
-    if (!nombre) return '?';
-
-    const partes = nombre.split(/\s+/);
-    const primera = partes[0]?.[0] ?? '';
-    const segunda = partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? '') : '';
-    return (primera + segunda).toUpperCase();
-  });
 
   protected logout(): void {
     void this.auth.logout();

@@ -15,6 +15,11 @@ const RUTAS_PUBLICAS = [
   // Canje del enlace de alta de una organización: lo autoriza el token de un
   // solo uso, y quien lo usa todavía no puede autenticarse.
   '/api/auth/activar-tenant/',
+  // RF-18. Quien recupera su contraseña puede estar en un navegador con la
+  // sesión de otra persona abierta: mandar ese Bearer sería filtrarlo a una
+  // operación que no es suya, y el backend no lo necesita para nada.
+  '/api/auth/recuperar/',
+  '/api/auth/restablecer/',
 ];
 
 /**

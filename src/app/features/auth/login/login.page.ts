@@ -201,6 +201,16 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
                   <app-icon name="arrow_forward" [size]="20" />
                 }
               </button>
+
+              <!-- Se arrastra la organización ya escrita: el restablecimiento la
+                   necesita, y volver a teclearla es fricción gratuita. -->
+              <a
+                routerLink="/recuperar"
+                [queryParams]="{ tenant: form.controls.tenant_slug.value }"
+                class="text-center text-label-md text-on-surface-variant hover:text-on-surface"
+              >
+                ¿Olvidaste tu contraseña?
+              </a>
             </form>
           }
 

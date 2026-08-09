@@ -12,7 +12,10 @@ import type {
   ConfigSeguridad,
   ConfigSeguridadUpdate,
   EventoAuditoria,
+  MensajeResponse,
   Paginated,
+  RecuperarPasswordRequest,
+  RestablecerPasswordRequest,
   RevocacionResponse,
   Rol,
   RolCreate,
@@ -51,6 +54,30 @@ export class CoreApi {
    */
   activarCuenta(body: ActivarCuenta): Promise<Usuario> {
     return firstValueFrom(this.http.post<Usuario>(`${this.base}/auth/activar/`, body));
+  }
+
+  /* -------------------------------------- RF-18: contraseña olvidada */
+
+  /**
+   * Solicita el enlace de restablecimiento. Público.
+   *
+   * Responde 200 con el **mismo** mensaje exista el correo o no (RN02): no hay
+   * forma de distinguir el caso, y así es como debe quedarse. El token vive
+   * **1 hora** —no 24, como el de alta— y no se devuelve aquí: viaja por correo,
+   * porque quien pide el restablecimiento puede no ser el titular.
+   */
+  solicitarRestablecimiento(body: RecuperarPasswordRequest): Promise<MensajeResponse> {
+    return firstValueFrom(this.http.post<MensajeResponse>(`${this.base}/auth/recuperar/`, body));
+  }
+
+  /**
+   * Canjea el token por la contraseña nueva. Público, de un solo uso.
+   *
+   * Al terminar, el backend **invalida todas las sesiones previas** del usuario
+   * (RN03): quien tuviera la cuenta abierta en otro dispositivo queda fuera.
+   */
+  restablecerPassword(body: RestablecerPasswordRequest): Promise<MensajeResponse> {
+    return firstValueFrom(this.http.post<MensajeResponse>(`${this.base}/auth/restablecer/`, body));
   }
 
   /* ---------------------------------------------------------------- usuarios */

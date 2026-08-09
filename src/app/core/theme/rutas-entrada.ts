@@ -21,6 +21,9 @@ export const RUTAS_ENTRADA: readonly string[] = [
   // Canje del enlace de alta de usuario y de organización.
   '/activar',
   '/activar-organizacion',
+  // RF-18: contraseña olvidada, solicitud y canje.
+  '/recuperar',
+  '/restablecer',
 ];
 
 /**
