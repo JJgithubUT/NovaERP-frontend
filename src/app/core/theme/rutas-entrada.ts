@@ -43,3 +43,4 @@ function normalizar(url: string): string {
   // '/login/' y '/login' son la misma pantalla.
   return sinQuery.length > 1 && sinQuery.endsWith('/') ? sinQuery.slice(0, -1) : sinQuery;
 }
+
