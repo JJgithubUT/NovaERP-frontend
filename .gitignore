@@ -57,3 +57,5 @@ Thumbs.db
 repomix-out.xml
 
 /templatesejemplos
+
+.env
