@@ -17,12 +17,13 @@ function tokenFalso(): string {
   })}.firma`;
 }
 
-/** Contexto de `/api/core/me/`. Ojo: **no** trae `telefono`, y eso es el contrato. */
+/** Contexto de `/api/core/me/`. Incluye `telefono` (antes no lo traía; ver historial). */
 const ME: MeResponse = {
   usuario: {
     id: 'usuario-1',
     nombre_completo: 'Ana Torres',
     correo: 'ana@acme.com',
+    telefono: null,
     estado: 'activo',
     mfa_enrolado: true,
     ultimo_acceso: null,
@@ -48,10 +49,11 @@ const ME: MeResponse = {
  *    localStorage— todavía es `null`: el campo se quedaba vacío para siempre y,
  *    al ser obligatorio, el botón quedaba deshabilitado.
  *
- * 2. **El teléfono.** Sí se guardaba; lo que no había era forma de verlo.
- *    `/api/core/me/` no devuelve `telefono`, así que el campo arrancaba en blanco
- *    y parecía que el guardado no había surtido efecto. La respuesta del PATCH sí
- *    lo trae, y es de donde se siembra ahora.
+ * 2. **El teléfono.** Sí se guardaba; lo que no había era forma de verlo:
+ *    `/api/core/me/` no devolvía `telefono`, así que el campo arrancaba en
+ *    blanco y parecía que el guardado no había surtido efecto. Ahora `/me/` sí
+ *    lo trae, se siembra desde ahí como el nombre, y dejarlo en blanco al
+ *    guardar es la forma de borrarlo (se manda `telefono: null` explícito).
  */
 describe('PerfilPage', () => {
   let editarUsuario: ReturnType<typeof vi.fn>;
@@ -89,6 +91,7 @@ describe('PerfilPage', () => {
           invalid: boolean;
         };
         guardar: () => void;
+        quitarTelefono: () => void;
       },
     };
   }
@@ -128,21 +131,54 @@ describe('PerfilPage', () => {
     expect(interno.form.getRawValue().nombre_completo).toBe('Ana Torres Ruiz');
   });
 
-  it('el teléfono arranca en blanco: el contexto no lo incluye', () => {
+  it('el teléfono arranca en blanco cuando el usuario no tiene uno guardado', () => {
     const { interno } = montar({ conMeCacheado: true });
 
     expect(interno.form.getRawValue().telefono).toBe('');
   });
 
-  it('no manda el teléfono si se deja en blanco, para no borrarlo', async () => {
+  it('siembra el teléfono desde el contexto cuando el usuario ya tiene uno', async () => {
+    // No se usa el `ME` base porque ese no trae teléfono; se prueba aparte
+    // para no acoplar los demás casos a un valor no-nulo por defecto.
+    const { fixture, store, interno } = montar({ conMeCacheado: false });
+    store.setMe({ ...ME, usuario: { ...ME.usuario, telefono: '5599887766' } });
+    await fixture.whenStable();
+
+    expect(interno.form.getRawValue().telefono).toBe('5599887766');
+  });
+
+  it('manda el teléfono como `null` si se deja en blanco, para borrarlo', async () => {
     const { interno } = montar({ conMeCacheado: true });
-    editarUsuario.mockResolvedValue({ ...ME.usuario, telefono: '5599887766' });
+    editarUsuario.mockResolvedValue({ ...ME.usuario, telefono: null });
 
     interno.guardar();
 
     // `mutate()` difiere la llamada a un microtask: asertar en seco vería cero.
     await vi.waitFor(() => expect(editarUsuario).toHaveBeenCalled());
-    expect(editarUsuario).toHaveBeenCalledWith('usuario-1', { nombre_completo: 'Ana Torres' });
+    expect(editarUsuario).toHaveBeenCalledWith('usuario-1', {
+      nombre_completo: 'Ana Torres',
+      telefono: null,
+    });
+  });
+
+  it('"Quitar" limpia el campo y el siguiente guardado borra el teléfono', async () => {
+    const { fixture, store, interno } = montar({ conMeCacheado: false });
+    store.setMe({ ...ME, usuario: { ...ME.usuario, telefono: '5599887766' } });
+    await fixture.whenStable();
+    expect(interno.form.getRawValue().telefono).toBe('5599887766');
+
+    interno.quitarTelefono();
+    expect(interno.form.getRawValue().telefono).toBe('');
+
+    editarUsuario.mockResolvedValue({ ...ME.usuario, telefono: null });
+    interno.guardar();
+
+    await vi.waitFor(() =>
+      expect(editarUsuario).toHaveBeenCalledWith('usuario-1', {
+        nombre_completo: 'Ana Torres',
+        telefono: null,
+      }),
+    );
   });
 
   it('manda el teléfono cuando se escribe uno, sin espacios', async () => {

@@ -11,6 +11,7 @@ const ME: MeResponse = {
     id: 'usuario-1',
     nombre_completo: 'Ana Torres Ruiz',
     correo: 'ana@acme.com',
+    telefono: null,
     estado: 'activo',
     mfa_enrolado: true,
     ultimo_acceso: null,

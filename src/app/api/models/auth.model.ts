@@ -93,6 +93,7 @@ export interface MeUsuario {
   id: Uuid;
   nombre_completo: string;
   correo: string;
+  telefono: string | null;
   estado: UsuarioEstado;
   mfa_enrolado: boolean;
   ultimo_acceso?: string | null;

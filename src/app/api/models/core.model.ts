@@ -49,7 +49,7 @@ export interface UsuarioCreate {
   nombre_completo: string;
   /** Al menos uno. Son ids de rol, no nombres. */
   roles: Uuid[];
-  telefono?: string;
+  telefono?: string | null;
   puesto?: string;
   departamento?: string;
 }
@@ -58,10 +58,13 @@ export interface UsuarioCreate {
  * Lo que acepta el PATCH depende de quién lo manda: el admin puede tocar los
  * cinco campos; el propietario, solo `nombre_completo` y `telefono` (cualquier
  * otro → 422).
+ *
+ * `telefono: null` (o `""`) lo borra explícitamente; omitir la key lo deja
+ * como estaba (el backend distingue "no viene" de "viene vacío").
  */
 export interface UsuarioUpdate {
   nombre_completo?: string;
-  telefono?: string;
+  telefono?: string | null;
   correo?: string;
   puesto?: string;
   departamento?: string;

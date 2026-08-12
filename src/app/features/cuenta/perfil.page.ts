@@ -83,9 +83,16 @@ import { ESTADO_USUARIO_LABEL, tonoUsuario } from '../administracion/administrac
               etiqueta="Teléfono"
               paraId="telefono"
               [error]="errorDe('telefono')"
-              ayuda="Arranca en blanco aunque ya tengas uno: tu propio teléfono no se puede consultar desde aquí. Escribe un número para actualizarlo; si lo dejas en blanco, se conserva el que tuvieras."
+              ayuda="Déjalo en blanco y guarda los cambios para quitarlo."
             >
-              <input id="telefono" class="campo-control" formControlName="telefono" />
+              <div class="flex gap-2">
+                <input id="telefono" class="campo-control flex-1" formControlName="telefono" />
+                @if (form.controls.telefono.value) {
+                  <button type="button" class="btn btn-secundario" (click)="quitarTelefono()">
+                    Quitar
+                  </button>
+                }
+              </div>
             </app-campo>
           </form>
 
@@ -144,10 +151,8 @@ export class PerfilPage {
   protected readonly guardado = injectMutation(() => ({
     mutationFn: (datos: UsuarioUpdate) => this.api.editarUsuario(this.store.usuarioId()!, datos),
     onSuccess: async (usuario: UsuarioActualizado) => {
-      // La respuesta del PATCH es el ÚNICO sitio donde se puede leer el teléfono
-      // ya guardado: `/api/core/me/` no lo devuelve. Sembrar el campo con él es
-      // lo que convierte «lo escribí y al volver estaba vacío, no se guardó» en
-      // una confirmación visible de que sí quedó.
+      // Se siembra con la respuesta del PATCH para que el campo refleje al
+      // instante lo que quedó guardado (incluye el caso de haberlo borrado).
       this.form.patchValue({ telefono: usuario.telefono ?? '' });
       this.toasts.exito('Datos actualizados.');
       // El nombre se pinta en el shell desde el `me` cacheado: sin recargarlo,
@@ -172,8 +177,8 @@ export class PerfilPage {
 
   constructor() {
     /**
-     * Siembra el nombre en cuanto llega el contexto del usuario, y solo la
-     * primera vez.
+     * Siembra nombre y teléfono en cuanto llega el contexto del usuario, y
+     * solo la primera vez.
      *
      * Antes esto ocurría en el cuerpo del constructor, y ahí `store.usuario()`
      * puede ser `null`: en un arranque en frío —sin el `me` cacheado en
@@ -184,15 +189,15 @@ export class PerfilPage {
      *
      * La guarda `sembrado` es la que impide que el `loadMe()` de después de
      * guardar pise lo que se esté escribiendo.
-     *
-     * `patchValue` y no `setValue`: este efecto solo es dueño del nombre. El
-     * teléfono se gobierna aparte —ver `guardado`— y un `setValue` lo borraría.
      */
     effect(() => {
       const usuario = this.store.usuario();
       if (!usuario || this.sembrado()) return;
 
-      this.form.patchValue({ nombre_completo: usuario.nombre_completo });
+      this.form.patchValue({
+        nombre_completo: usuario.nombre_completo,
+        telefono: usuario.telefono ?? '',
+      });
       this.sembrado.set(true);
     });
   }
@@ -220,13 +225,15 @@ export class PerfilPage {
 
     this.guardado.mutate({
       nombre_completo: valor.nombre_completo,
-      // El teléfono solo viaja si se escribió algo.
-      //
-      // `/api/core/me/` no devuelve `telefono`, así que el campo arranca vacío
-      // aunque el usuario tenga uno guardado. Mandar esa cadena vacía lo
-      // borraría sin que nadie lo pidiera. Es una limitación del contrato: no
-      // hay forma de leer el propio teléfono sin permiso sobre el directorio.
-      ...(telefono === '' ? {} : { telefono }),
+      // El campo arranca sembrado con el valor real (ver constructor), así
+      // que dejarlo en blanco es una decisión explícita de borrarlo: se manda
+      // `null` en vez de omitir la key.
+      telefono: telefono === '' ? null : telefono,
     });
+  }
+
+  protected quitarTelefono(): void {
+    this.form.patchValue({ telefono: '' });
+    this.form.controls.telefono.markAsTouched();
   }
 }

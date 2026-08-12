@@ -270,13 +270,19 @@ export class UsuarioFormModal implements OnInit {
     }
 
     const valor = this.form.getRawValue();
+    const editando = this.usuario() !== null;
+    const telefono = valor.telefono.trim();
+
     this.guardar.emit({
       nombre_completo: valor.nombre_completo,
       correo: valor.correo.trim(),
       roles: this.seleccionados(),
-      // Los opcionales solo viajan si tienen contenido: una cadena vacía
-      // sobrescribiría el dato existente al editar.
-      ...(valor.telefono.trim() === '' ? {} : { telefono: valor.telefono.trim() }),
+      // El teléfono se siembra con el valor real al editar (ver `ngOnInit`),
+      // así que dejarlo en blanco ahí es un borrado explícito (`null`); en el
+      // alta no hay nada que borrar, así que si está vacío simplemente no viaja.
+      ...(telefono === '' ? (editando ? { telefono: null } : {}) : { telefono }),
+      // Puesto y departamento: los opcionales solo viajan si tienen contenido,
+      // una cadena vacía no sobrescribe el dato existente al editar.
       ...(valor.puesto.trim() === '' ? {} : { puesto: valor.puesto.trim() }),
       ...(valor.departamento.trim() === '' ? {} : { departamento: valor.departamento.trim() }),
     });
