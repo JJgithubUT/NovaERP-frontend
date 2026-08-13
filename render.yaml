@@ -2,7 +2,7 @@ services:
   - type: web
     name: nova-erp-frontend
     runtime: static
-    branch: main
+    branch: login
     buildCommand: npm ci && npm run build
     staticPublishPath: dist/nova-erp/browser
     pullRequestPreviewsEnabled: false
