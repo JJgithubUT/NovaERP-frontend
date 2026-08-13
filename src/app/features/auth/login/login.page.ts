@@ -29,11 +29,13 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
           class="rounded-lg border border-outline-variant bg-surface-container-lowest p-8 shadow-sm"
         >
           <div class="flex flex-col items-center text-center">
-            <div
-              class="flex h-14 w-14 items-center justify-center rounded-md bg-surface-container-high"
-            >
-              <app-icon name="fingerprint" [size]="28" class="text-action" />
-            </div>
+            <img
+              src="android-chrome-192x192.png"
+              alt="NovaERP Logo"
+              width="56"
+              height="56"
+              class="rounded-md"
+            />
             <h1 class="mt-4 text-headline-md font-bold text-primary">NovaERP</h1>
             <p class="mt-1 text-body-sm text-on-surface-variant">Plataforma Empresarial Segura</p>
           </div>

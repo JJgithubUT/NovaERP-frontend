@@ -48,11 +48,13 @@ import { construirNavegacion, construirNavegacionSistema } from '../navigation';
         [class]="asideClases()"
       >
         <div class="mb-8 flex items-center gap-3 px-container-margin">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded bg-action font-bold text-on-action"
-          >
-            N
-          </div>
+          <img
+            src="favicon-32x32.png"
+            alt="NovaERP Logo"
+            width="40"
+            height="40"
+            class="rounded"
+          />
           <div class="min-w-0">
             <h1 class="truncate text-headline-sm font-bold text-primary">NovaERP</h1>
             <p class="truncate text-label-caps uppercase text-on-surface-variant">
