@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: nova-erp-frontend
+    runtime: static
+    branch: main
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist/nova-erp/browser
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: NODE_VERSION
+        value: 24.16.0
+      - key: NG_APP_API_BASE_URL
+        sync: false
+      - key: NG_APP_ENABLE_SERVICE_WORKER
+        value: "true"
+      - key: NG_APP_QUERY_STALE_TIME_MS
+        value: "30000"
+      - key: NG_APP_QUERY_GC_TIME_MS
+        value: "86400000"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /*.js
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*.css
+        name: Cache-Control
+        value: public, max-age=31536000, immutable

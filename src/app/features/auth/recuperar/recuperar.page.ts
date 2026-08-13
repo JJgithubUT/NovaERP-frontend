@@ -77,9 +77,14 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
               </p>
             </div>
 
+            <a routerLink="/restablecer" class="btn btn-primario mt-4 w-full py-3">
+              Ya tengo el código
+              <app-icon name="arrow_forward" [size]="18" />
+            </a>
+
             <button
               type="button"
-              class="btn btn-secundario mt-4 w-full py-2.5"
+              class="btn btn-secundario mt-2 w-full py-2.5"
               (click)="reiniciar()"
             >
               Usar otro correo
