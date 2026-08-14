@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Caché de compilación de Angular: sobra de la rama `login`, no se usa aquí
+.angular
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

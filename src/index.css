@@ -1,23 +1,571 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/*
+ * ============================================================================
+ * Sistema de diseño NovaERP
+ * ============================================================================
+ *
+ * Síntesis de las dos ramas, y conviene tener clara la regla de reparto porque
+ * gobierna todo este archivo:
+ *
+ * - **El color y la forma los pone `main`** (la maqueta React). Fondo #F2F2F2,
+ *   tarjetas blancas, Guinda #73030D, gris #AFAFAF, negro #0D0D0D, esquinas de
+ *   10px y la tipografía del sistema. Esa es la apariencia que se conserva.
+ * - **La estructura la pone la rama `login`** (la app Angular): la escala
+ *   tipográfica, los tokens de layout y las clases de tabla, campo y botón.
+ *   `main` no tenía nada de esto —sus pantallas llevaban los estilos en
+ *   objetos `style` en línea— y las ~30 pantallas que se portan no pueden
+ *   repetir doce clases sueltas en cada `<table>`.
+ *
+ * Lo que deliberadamente NO se trajo de `login`: su paleta Material 3, cuyas
+ * superficies son rosadas (#fff8f7) y cambiarían el aspecto; y sus fuentes
+ * self-hosted (Inter, JetBrains Mono, Material Symbols), porque `main` usa la
+ * fuente del sistema e iconos de `lucide-react`. Los nombres de token sí se
+ * respetan (`surface`, `on-surface`, `action`…) para que el markup portado
+ * desde Angular siga funcionando sin traducir clase por clase.
+ */
+
+/* ------------------------------------------------------------ modo oscuro */
+
+/*
+ * Tailwind v4 usa `prefers-color-scheme` por defecto para `dark:`. Aquí se
+ * redefine a la estrategia de clase, que es la única que permite un toggle
+ * manual; `ThemeService` es quien pone la clase en <html>.
+ *
+ * `main` no tenía tema oscuro. Se incluye porque el toggle es una de las
+ * funcionalidades que se portan, y los valores se derivan de la paleta de
+ * `main` —no de la de Angular— para que el modo claro, que es el que se ve por
+ * defecto, quede exactamente como estaba.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-guinda-base: #73030D;
-  --color-rojo-hover: #9E1A22;
-  --color-fondo-main: #F2F2F2;
-  --color-negro-profundo: #0D0D0D;
-  --color-gris-medio: #AFAFAF;
+  /* ------------------------------------------------- paleta base de `main` */
+
+  --color-guinda-base: #73030d;
+  --color-rojo-hover: #9e1a22;
+  --color-fondo-main: #f2f2f2;
+  --color-negro-profundo: #0d0d0d;
+  --color-gris-medio: #afafaf;
+
+  /* --------------------------------------------------------- superficies */
+
+  /* El lienzo de la app. */
+  --color-background: #f2f2f2;
+  --color-on-background: #0d0d0d;
+
+  /* Las tarjetas y tablas van en blanco puro sobre ese lienzo. */
+  --color-surface: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  /* Fondo de los inputs en reposo, tal como los pinta el login de `main`. */
+  --color-surface-container: #fafafa;
+  --color-surface-container-high: #f2f2f2;
+  --color-surface-container-highest: #e9e9e9;
+
+  --color-on-surface: #0d0d0d;
+
+  /*
+   * Texto tenue. Es un añadido, no un color de `main`: allí las leyendas van en
+   * #AFAFAF, que sobre blanco da 2.3:1 y es ilegible en una tabla densa. El
+   * gris de marca se conserva para bordes y elementos decorativos —que es
+   * donde `main` lo luce— y este otro cubre el texto secundario con 5.7:1.
+   */
+  --color-on-surface-variant: #6b6b6b;
+
+  /* Bordes. `outline` es el gris de marca; `outline-variant` el borde suave
+     de las tarjetas de `main`. Ninguno de los dos es para texto. */
+  --color-outline: #afafaf;
+  --color-outline-variant: #e5e5e5;
+
+  /* -------------------------------------------------------------- marca */
+
+  /*
+   * El par de los CTA. Se mantiene separado de `primary` por la misma razón
+   * que en la rama Angular: en oscuro, un `on-primary` rojo sobre Guinda daría
+   * un botón ilegible. `action` es siempre el Guinda del tema y `on-action`
+   * siempre blanco — 12:1 en claro.
+   */
+  --color-action: #73030d;
+  --color-on-action: #ffffff;
+  --color-action-hover: #9e1a22;
+
+  --color-primary: #73030d;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #73030d;
+  --color-on-primary-container: #ffffff;
+
+  /* ---------------------------------------------------------- semánticos */
+
+  /* `main` no tokenizaba estados. Se traen de la rama Angular porque las
+     pantallas portadas los necesitan para "Activo/Inactivo" y los avisos. */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-success: #146c2e;
+  --color-on-success: #ffffff;
+  --color-success-container: #c7f0cf;
+  --color-on-success-container: #04390f;
+
+  --color-warning: #8a5300;
+  --color-on-warning: #ffffff;
+  --color-warning-container: #ffdfa8;
+  --color-on-warning-container: #2b1700;
+
+  /* --------------------------------------------------------- tipografía */
+
+  /* La del sistema, como en `main`. */
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
+
+  /* Escala heredada de la rama Angular. `body-sm` (13px) es la de las tablas. */
+  --text-display-lg: 36px;
+  --text-display-lg--line-height: 44px;
+  --text-display-lg--font-weight: 700;
+  --text-display-lg--letter-spacing: -0.02em;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 700;
+  --text-headline-md--letter-spacing: -0.01em;
+
+  --text-headline-sm: 18px;
+  --text-headline-sm--line-height: 26px;
+  --text-headline-sm--font-weight: 600;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 18px;
+
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--font-weight: 500;
+  --text-label-md--letter-spacing: 0.01em;
+
+  --text-label-caps: 11px;
+  --text-label-caps--line-height: 14px;
+  --text-label-caps--font-weight: 600;
+  --text-label-caps--letter-spacing: 0.05em;
+
+  /* -------------------------------------------------------------- formas */
+
+  /* Los radios de `main`: 10px en inputs y botones, 16px en las tarjetas. */
+  --radius-sm: 0.5rem;
+  --radius-DEFAULT: 0.625rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* -------------------------------------------------------------- layout */
+
+  --spacing-sidebar: 260px;
+  --spacing-sidebar-rail: 64px;
+  --spacing-topbar: 64px;
 }
 
-:root {
-  --color-guinda-base: #73030D;
-  --color-rojo-hover: #9E1A22;
-  --color-fondo-main: #F2F2F2;
-  --color-negro-profundo: #0D0D0D;
-  --color-gris-medio: #AFAFAF;
+/*
+ * Paleta OSCURA, derivada de la de `main`: el negro profundo pasa a ser el
+ * lienzo y el Guinda sube a #a60412 porque #73030d pierde impacto sobre fondo
+ * oscuro.
+ */
+.dark {
+  --color-background: #0d0d0d;
+  --color-on-background: #e8e6e6;
+
+  --color-surface: #171717;
+  --color-surface-container-lowest: #121212;
+  --color-surface-container: #1f1f1f;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353535;
+
+  --color-on-surface: #e8e6e6;
+  --color-on-surface-variant: #a8a4a4;
+
+  --color-outline: #6f6b6b;
+  --color-outline-variant: #3a3838;
+
+  --color-action: #a60412;
+  --color-on-action: #ffffff;
+  --color-action-hover: #c2101d;
+
+  --color-primary: #ffb4ac;
+  --color-on-primary: #690006;
+  --color-primary-container: #a60412;
+  --color-on-primary-container: #ffb0a8;
+
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+
+  --color-success: #7fd68f;
+  --color-on-success: #003912;
+  --color-success-container: #05531c;
+  --color-on-success-container: #9bf2aa;
+
+  --color-warning: #f0bd6d;
+  --color-on-warning: #452b00;
+  --color-warning-container: #633f00;
+  --color-on-warning-container: #ffdfa8;
 }
 
-body {
-  background-color: var(--color-fondo-main);
-  color: var(--color-negro-profundo);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+/* ------------------------------------------------------------------- base */
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Los datos tabulares se leen en columna: sin esto, un "1,299.99" y un
+   * "850.00" no alinean sus puntos decimales y la columna se ve torcida.
+   */
+  .tabular,
+  td.numeric,
+  th.numeric {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* --------------------------------------------------------- utilidades UI */
+
+@utility sombra-tarjeta {
+  /* La sombra de la tarjeta de acceso de `main`, tal cual. */
+  box-shadow:
+    0 20px 40px rgba(13, 13, 13, 0.08),
+    0 1px 3px rgba(13, 13, 13, 0.04);
+}
+
+@utility sombra-guinda {
+  /* El realce de los botones primarios de `main`. */
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-action) 25%, transparent);
+}
+
+@utility focus-glow {
+  /* Foco de los inputs de `main`: borde Guinda + halo al 10%. */
+  border-color: var(--color-action);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-action) 10%, transparent);
+  outline: none;
+}
+
+/* ---------------------------------------------------------------- tablas */
+
+/*
+ * Estilo único de los listados. Se define aquí, y no repitiendo diez clases de
+ * Tailwind en cada `<table>`, porque son siete tablas en Inventario y otras
+ * tantas por módulo: cualquier ajuste de padding o de borde tendría que
+ * replicarse a mano en todas y acabarían divergiendo.
+ *
+ * Uso:
+ *   <div class="tabla-scroll"><table class="tabla">…</table></div>
+ *
+ * El envoltorio es obligatorio: sin él, una tabla ancha desborda el `<main>` y
+ * empuja la página entera a scrollear en horizontal.
+ */
+@layer components {
+  .tabla-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-container-lowest);
+  }
+
+  .tabla {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+  }
+
+  /* La cabecera Guinda es la firma visual del listado. */
+  .tabla thead {
+    background-color: var(--color-action);
+    color: var(--color-on-action);
+  }
+
+  .tabla th {
+    padding: 0.75rem;
+    font-size: var(--text-label-caps);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .tabla td {
+    padding: 0.75rem;
+    color: var(--color-on-surface);
+    border-top: 1px solid var(--color-outline-variant);
+  }
+
+  .tabla tbody tr:hover td {
+    background-color: color-mix(in srgb, var(--color-action) 5%, transparent);
+  }
+
+  /* Columnas de importes y cantidades: alineadas a la derecha y con cifras de
+     ancho fijo, para que los decimales queden en la misma vertical. */
+  .tabla .num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tabla .clave {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  .tabla .tenue {
+    color: var(--color-on-surface-variant);
+  }
+}
+
+/* ---------------------------------------------------------------- campos */
+
+/*
+ * Inputs, selects y textareas. Misma razón que las tablas: son decenas
+ * repartidas por los modales de cada módulo. Los valores son los del login de
+ * `main` — fondo #FAFAFA, borde gris, 10px de radio.
+ */
+@layer components {
+  .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .campo-etiqueta {
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--color-on-surface);
+  }
+
+  .campo-control {
+    width: 100%;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-DEFAULT);
+    background-color: var(--color-surface-container);
+    padding: 0.8125rem 1rem;
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md--line-height);
+    color: var(--color-on-surface);
+    transition: all 250ms ease;
+  }
+
+  .campo-control::placeholder {
+    color: var(--color-gris-medio);
+  }
+
+  .campo-control:focus {
+    border-color: var(--color-action);
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-action) 10%, transparent);
+    outline: none;
+  }
+
+  .campo-control:disabled {
+    opacity: 0.5;
+  }
+
+  /* Marca el control exacto que señaló un 422 con su `campo`. */
+  .campo-control[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+
+  .campo-error {
+    font-size: var(--text-body-sm);
+    color: var(--color-error);
+  }
+}
+
+/* --------------------------------------------------------------- botones */
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-DEFAULT);
+    padding: 0.625rem 1rem;
+    font-size: var(--text-body-md);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 250ms ease;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* CTA de la pantalla: Guinda plano con realce, como en `main`. */
+  .btn-primario {
+    background-color: var(--color-action);
+    color: var(--color-on-action);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-action) 25%, transparent);
+  }
+
+  .btn-primario:hover:not(:disabled) {
+    background-color: var(--color-action-hover);
+  }
+
+  .btn-secundario {
+    border: 1px solid var(--color-outline-variant);
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+  }
+
+  .btn-secundario:hover:not(:disabled) {
+    background-color: var(--color-surface-container-high);
+  }
+
+  .btn-peligro {
+    border: 1px solid var(--color-error);
+    background-color: transparent;
+    color: var(--color-error);
+  }
+
+  .btn-peligro:hover:not(:disabled) {
+    background-color: var(--color-error-container);
+    color: var(--color-on-error-container);
+  }
+
+  /* Acciones dentro de una fila de tabla: mismo lenguaje, menos peso. */
+  .btn-fila {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.625rem;
+    font-size: var(--text-label-md);
+    font-weight: 500;
+    color: var(--color-on-surface-variant);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+
+  .btn-fila:hover:not(:disabled) {
+    background-color: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+  }
+
+  .btn-fila:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* --------------------------------------------------------------- tarjetas */
+
+@layer components {
+  .tarjeta {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* ------------------------------------------------ pantallas de acceso */
+
+/*
+ * Las animaciones de la pantalla de login de `main`. Allí vivían en una
+ * etiqueta `<style>` incrustada dentro del componente; aquí suben al sistema de
+ * diseño porque las comparten las cinco pantallas públicas (acceso, activación,
+ * recuperación, restablecimiento y el portal de plataforma).
+ */
+@keyframes nova-aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nova-flotar-1 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+}
+
+@keyframes nova-flotar-2 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-30px, 20px) scale(1.05);
+  }
+}
+
+@layer components {
+  .tarjeta-acceso {
+    animation: nova-aparecer 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Los dos halos difuminados del fondo. */
+  .halo {
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    border-radius: 50%;
+    filter: blur(60px);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .halo-guinda {
+    top: -15%;
+    left: -10%;
+    background-color: color-mix(in srgb, var(--color-guinda-base) 7%, transparent);
+    animation: nova-flotar-1 8s ease-in-out infinite;
+  }
+
+  .halo-negro {
+    bottom: -15%;
+    right: -10%;
+    background-color: color-mix(in srgb, var(--color-negro-profundo) 5%, transparent);
+    animation: nova-flotar-2 10s ease-in-out infinite;
+  }
+
+  /* Quien pide menos movimiento no debería recibir tres animaciones en bucle. */
+  @media (prefers-reduced-motion: reduce) {
+    .tarjeta-acceso,
+    .halo-guinda,
+    .halo-negro {
+      animation: none;
+    }
+  }
 }
