@@ -23,6 +23,19 @@ import { dispararCierrePlataforma, dispararCierreTenant } from '../core/auth/cie
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  /*
+   * Sin esto, un backend que acepta la conexión y luego no contesta deja la
+   * pantalla en «Cargando…» para siempre: axios espera indefinidamente por
+   * defecto y la petición nunca llega al interceptor de errores.
+   *
+   * No es hipotético — el despliegue va a una computadora de la red local, donde
+   * un cable suelto o el equipo suspendido dan exactamente ese cuadro. Con el
+   * timeout, la petición falla como error de red y la tabla lo dice.
+   *
+   * 30 s es holgado para un listado. Una exportación pesada que necesite más
+   * puede pasar su propio `timeout` en la llamada.
+   */
+  timeout: 30_000,
 });
 /* ------------------------------------------------------------- superficies */
 /**

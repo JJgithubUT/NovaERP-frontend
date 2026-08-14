@@ -13,10 +13,16 @@ import { RecuperarPage } from '../features/auth/RecuperarPage';
 import { RestablecerPage } from '../features/auth/RestablecerPage';
 import { ForbiddenPage, NotFoundPage, SeccionNoEncontrada } from '../features/errors/ErrorPages';
 import { PendientePage } from '../features/PendientePage';
+import { VentasLayout } from '../features/ventas/VentasLayout';
+import { ClientesPage } from '../features/ventas/clientes/ClientesPage';
+import { PipelinePage } from '../features/ventas/pipeline/PipelinePage';
+import { OportunidadesPage } from '../features/ventas/oportunidades/OportunidadesPage';
+import { CotizacionesPage } from '../features/ventas/cotizaciones/CotizacionesPage';
+import { PedidosPage } from '../features/ventas/pedidos/PedidosPage';
+import { FacturasPage } from '../features/ventas/facturas/FacturasPage';
 // Pantallas de la maqueta de `main`, todavía con datos simulados. Se sustituyen
 // módulo a módulo conforme se conectan al API real; ver `PendientePage`.
 import Dashboard from '../pages/Dashboard.jsx';
-import Ventas from '../pages/Ventas.jsx';
 import Inventario from '../pages/Inventario.jsx';
 import Compras from '../pages/Compras.jsx';
 /**
@@ -72,9 +78,19 @@ export const router = createBrowserRouter([
         path: 'ventas',
         element: (
           <RequiereModulo codigo="VENTAS">
-            <Ventas />
+            <VentasLayout />
           </RequiereModulo>
         ),
+        children: [
+          { index: true, element: <Navigate to="clientes" replace /> },
+          { path: 'clientes', element: <ClientesPage /> },
+          { path: 'pipeline', element: <PipelinePage /> },
+          { path: 'oportunidades', element: <OportunidadesPage /> },
+          { path: 'cotizaciones', element: <CotizacionesPage /> },
+          { path: 'pedidos', element: <PedidosPage /> },
+          { path: 'facturas', element: <FacturasPage /> },
+          { path: 'reportes', element: <PendientePage modulo="Reportes de ventas" /> },
+        ],
       },
       {
         path: 'inventario',

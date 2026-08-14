@@ -113,6 +113,14 @@
   --color-warning-container: #ffdfa8;
   --color-on-warning-container: #2b1700;
 
+  /* Informativo: el azul de las etiquetas neutras de estado ("Abierta",
+     "Confirmado"). Es el único acento que no sale de la paleta de `main`,
+     porque no tenía ninguno que no fuera Guinda o gris. */
+  --color-info: #1c4586;
+  --color-on-info: #ffffff;
+  --color-info-container: #d8e2ff;
+  --color-on-info-container: #001f4c;
+
   /* --------------------------------------------------------- tipografía */
 
   /* La del sistema, como en `main`. */
