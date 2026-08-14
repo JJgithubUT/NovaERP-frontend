@@ -62,12 +62,29 @@ export function normalizeError(error) {
   const status = error.response?.status ?? 0;
   const kind = kindDeStatus(status);
   const body = comoObjeto(error.response?.data);
+
+  /*
+   * La petición viaja dentro del error. Los interceptores de respuesta de axios
+   * corren **después** de esta función, así que para cuando miran el error ya no
+   * tienen el `AxiosError` con su `config`. Sin esto ninguno sabría qué URL
+   * falló, y el vigilante de 401 trataría un login con contraseña mala como una
+   * sesión expirada.
+   */
+  const peticion = {
+    url: error.config?.url ?? '',
+    metodo: (error.config?.method ?? '').toUpperCase(),
+    // Ya serializado a JSON por axios. El outbox lo necesita para reproducir la
+    // escritura cuando vuelva la red.
+    cuerpo: error.config?.data,
+  };
+
   if (!body) {
     return createApiError({
       kind,
       status,
       message: MENSAJE_POR_DEFECTO[kind],
       extra: {},
+      ...peticion,
     });
   }
   // Los dos dialectos. `detail` gana si por alguna razón vinieran ambos.
@@ -78,6 +95,7 @@ export function normalizeError(error) {
     status,
     message,
     extra,
+    ...peticion,
   };
   const field = textoDe(campo);
   return createApiError(field ? { ...normalized, field } : normalized);

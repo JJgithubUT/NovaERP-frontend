@@ -2,9 +2,11 @@ import axios from 'axios';
 import { API_BASE_URL } from '../core/config/api.config';
 import { authStore } from '../core/auth/auth.store';
 import { plataformaStore } from '../core/plataforma/plataforma.store';
-import { isApiError } from '../core/errors/api-error.model';
+import { createApiError, isApiError } from '../core/errors/api-error.model';
 import { normalizeError } from '../core/errors/normalize-error';
 import { dispararCierrePlataforma, dispararCierreTenant } from '../core/auth/cierre-sesion';
+import { colaSync } from '../core/offline/sync-queue';
+import { estadoRed } from '../core/offline/network-status';
 /**
  * Cliente HTTP único de la app. Concentra lo que en Angular eran cuatro
  * interceptores registrados en `app.config.ts`.
@@ -81,6 +83,47 @@ const RUTAS_SIN_SESION_PLATAFORMA = ['/api/admin/login/', '/api/admin/logout/'];
 function urlDe(config) {
   return config.url ?? '';
 }
+
+/* ------------------------------------------------- catálogos encolables */
+
+const METODOS_ENCOLABLES = new Set(['POST', 'PATCH', 'DELETE']);
+
+/**
+ * Los cuatro catálogos que se pueden mutar sin red. Solo estos: una factura o
+ * una recepción tienen efectos que el backend debe validar en el momento
+ * (reservar stock, calcular impuestos), y encolarlas a ciegas crearía
+ * documentos que quizá el servidor rechace.
+ */
+const RUTAS_CATALOGO = [
+  ['/api/inventario/productos/', 'productos'],
+  ['/api/inventario/almacenes/', 'almacenes'],
+  ['/api/ventas/clientes/', 'clientes'],
+  ['/api/compras/proveedores/', 'proveedores'],
+];
+
+/** @returns {import('../core/offline/outbox.model.js').Entidad | null} */
+function entidadDeCatalogo(url) {
+  return RUTAS_CATALOGO.find(([ruta]) => url.includes(ruta))?.[1] ?? null;
+}
+
+/** El outbox reproduce la petición con `fetch`, que no tiene `baseURL`. */
+function urlAbsoluta(url) {
+  try {
+    return new URL(url, API_BASE_URL || window.location.origin).toString();
+  } catch {
+    return url;
+  }
+}
+
+/** Axios ya serializó el cuerpo a JSON; el outbox lo vuelve a serializar. */
+function parsearCuerpo(data) {
+  if (typeof data !== 'string') return data ?? null;
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+}
 function incluyeAlguna(url, rutas) {
   return rutas.some((ruta) => url.includes(ruta));
 }
@@ -144,6 +187,61 @@ api.interceptors.response.use(
   (error) => Promise.reject(normalizeError(error)),
 );
 /**
+ * Captura las escrituras que no pudieron salir por falta de red y las guarda en
+ * el outbox (Flujo 4).
+ *
+ * Solo actúa sobre fallos de red (`kind === 'network'`). Un 422 o un 404 son
+ * respuestas legítimas del servidor y tienen que llegar al formulario tal cual.
+ *
+ * No inventa una respuesta exitosa falsa: re-lanza el error con `queued: true`.
+ * Así la pantalla distingue «se guardó local, mantén el cambio» de «falló de
+ * verdad» — que es justo lo que hace `avisarSiEncolado` en las páginas de
+ * catálogo.
+ *
+ * Va **antes** que los vigilantes de 401 en el orden de registro para que el
+ * error que ellos ven sea ya el definitivo.
+ */
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (!isApiError(error)) return Promise.reject(error);
+
+    const metodo = error.metodo ?? '';
+    const entidad = entidadDeCatalogo(error.url ?? '');
+
+    if (!METODOS_ENCOLABLES.has(metodo) || !entidad) return Promise.reject(error);
+    if (error.kind !== 'network') return Promise.reject(error);
+
+    // El fallo real es mejor señal que `navigator.onLine`, que en un WiFi sin
+    // salida sigue diciendo que hay red.
+    estadoRed.reportarFallo();
+
+    try {
+      await colaSync.encolar({
+        entidad,
+        operacion: metodo === 'POST' ? 'crear' : metodo === 'DELETE' ? 'baja' : 'actualizar',
+        method: /** @type {'POST' | 'PATCH' | 'DELETE'} */ (metodo),
+        url: urlAbsoluta(error.url ?? ''),
+        body: parsearCuerpo(error.cuerpo),
+      });
+
+      return Promise.reject(
+        createApiError({
+          ...error,
+          queued: true,
+          message: 'Sin conexión. El cambio se guardó y se enviará al reconectar.',
+        }),
+      );
+    } catch {
+      // Si ni siquiera se pudo encolar (sin sesión, IndexedDB lleno), el cambio
+      // se perdió: sería mentir marcarlo como guardado. Va el error de red
+      // original, sin `queued`.
+      return Promise.reject(error);
+    }
+  },
+);
+
+/**
  * Vigila los 401 del tenant y dispara el logout global.
  *
  * El backend no tiene refresh token: un 401 es terminal, no hay nada que
@@ -152,7 +250,7 @@ api.interceptors.response.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const url = error.config?.url ?? '';
+    const url = isApiError(error) ? (error.url ?? '') : '';
     const esSesionExpirada =
       isApiError(error) &&
       error.kind === 'auth' &&
@@ -178,7 +276,7 @@ api.interceptors.response.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const url = error.config?.url ?? '';
+    const url = isApiError(error) ? (error.url ?? '') : '';
     const esSesionExpirada =
       isApiError(error) &&
       error.kind === 'auth' &&

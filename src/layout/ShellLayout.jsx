@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, LogOut, Menu, X } from 'lucide-react';
 import * as auth from '../core/auth/auth.service';
 import { useAuth } from '../core/auth/useAuth';
 import { ToastHost } from '../shared/ui/ToastHost';
+import { ActualizacionPrompt } from './ActualizacionPrompt';
+import { OfflineBanner } from './OfflineBanner';
 import { construirNavegacion, construirNavegacionSistema, itemInicio } from './navigation';
 /**
  * El "Application Shell": la estructura que el Service Worker sirve al instante
@@ -175,9 +177,16 @@ export function ShellLayout() {
         </div>
       </aside>
 
-      <main className="h-full flex-1 overflow-y-auto p-4 md:p-8">
-        <Outlet />
-      </main>
+      <div className="flex h-full min-w-0 flex-1 flex-col">
+        {/* Fuera del <main>: los avisos de conexión y de versión nueva no deben
+            desplazarse con el contenido. */}
+        <ActualizacionPrompt />
+        <OfflineBanner />
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <Outlet />
+        </main>
+      </div>
 
       {/* Fuera del <main>: los avisos van fijos a la ventana, y dentro de un
           contenedor con scroll se desplazarían con la tabla. */}

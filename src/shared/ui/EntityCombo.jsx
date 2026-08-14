@@ -122,8 +122,15 @@ export function EntityCombo({ etiqueta, tipo, valor, onValor, marcador = 'Buscar
 
           {abierto ? (
             <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-DEFAULT border border-outline-variant bg-surface shadow-lg">
-              {consulta.isPending ? (
+              {/* Igual que en las tablas: sin servidor, TanStack deja la
+                  consulta en `paused` y `isPending` no se resuelve nunca. Sin
+                  este caso el desplegable diría «Buscando…» indefinidamente. */}
+              {consulta.fetchStatus === 'paused' ? (
+                <li className="px-3 py-2 text-body-sm text-error">Sin conexión con el servidor.</li>
+              ) : consulta.isPending ? (
                 <li className="px-3 py-2 text-body-sm text-on-surface-variant">Buscando…</li>
+              ) : consulta.error ? (
+                <li className="px-3 py-2 text-body-sm text-error">No se pudo buscar.</li>
               ) : opciones.length === 0 ? (
                 <li className="px-3 py-2 text-body-sm text-on-surface-variant">
                   Sin resultados activos.
