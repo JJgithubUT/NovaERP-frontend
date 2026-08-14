@@ -14,6 +14,7 @@ import { ShellLayout } from '../layout/ShellLayout';
 import { LoginPage } from '../features/auth/LoginPage';
 import { RecuperarPage } from '../features/auth/RecuperarPage';
 import { RestablecerPage } from '../features/auth/RestablecerPage';
+import { ActivarPage } from '../features/auth/ActivarPage';
 import { ForbiddenPage, NotFoundPage, SeccionNoEncontrada } from '../features/errors/ErrorPages';
 import { VentasLayout } from '../features/ventas/VentasLayout';
 import { ClientesPage } from '../features/ventas/clientes/ClientesPage';
@@ -95,6 +96,13 @@ export const router = createBrowserRouter([
    */
   { path: '/recuperar', element: <RecuperarPage /> },
   { path: '/restablecer', element: <RestablecerPage /> },
+  /*
+   * Canje del enlace de alta de una cuenta (RF-05) y de la reconfirmación de
+   * correo (RF-07): es el `/activar` al que apunta FRONTEND_URL en los correos
+   * con token. Tiene que ir **antes** de `/:tenant`, o la ruta comodín se lo
+   * traga tratando «activar» como un slug y el guard de sesión rebota al login.
+   */
+  { path: '/activar', element: <ActivarPage /> },
   /*
    * Canje del enlace de alta de una organización. Pública y sin guard de
    * invitado, por lo mismo que las de arriba: quien la usa todavía no puede

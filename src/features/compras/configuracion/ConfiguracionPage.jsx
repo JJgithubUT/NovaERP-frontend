@@ -36,10 +36,13 @@ export function ConfiguracionPage() {
    * Siembra el campo cuando llega la configuración. Se compara con el valor
    * servido para no pisar lo que el usuario esté escribiendo si la consulta se
    * refresca de fondo.
+   *
+   * Un tenant sin umbral configurado lo devuelve como `null`; el campo es
+   * controlado y su estado tiene que seguir siendo string, así que entra vacío.
    */
   const servido = consulta.data?.umbral_monto;
   useEffect(() => {
-    if (servido !== undefined) setUmbral(servido);
+    if (servido !== undefined) setUmbral(servido ?? '');
   }, [servido]);
 
   const guardado = useMutation({

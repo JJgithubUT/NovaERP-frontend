@@ -28,10 +28,15 @@ export function toDecimal(value) {
 /**
  * Convierte a string seguro para mandar al backend. `null` si no es válido.
  *
- * @param {string} value
+ * Es la puerta de validación de todos los formularios, así que un campo que
+ * llega vacío del backend (`null`) es una respuesta esperada, no un error: se
+ * trata como "no válido" en vez de reventar.
+ *
+ * @param {string | null | undefined} value
  * @returns {DecimalString | null}
  */
 export function parseDecimal(value) {
+  if (typeof value !== 'string') return null;
   const limpio = value.trim();
   if (limpio === '') return null;
 
@@ -42,7 +47,7 @@ export function parseDecimal(value) {
   }
 }
 
-/** @param {string} value */
+/** @param {string | null | undefined} value */
 export function isValidDecimal(value) {
   return parseDecimal(value) !== null;
 }
@@ -59,7 +64,7 @@ export function isNegative(value) {
 /**
  * Varias reglas del backend son "debe ser >= 0". Esta es su contraparte local.
  *
- * @param {string} value
+ * @param {string | null | undefined} value
  */
 export function isNonNegative(value) {
   const parsed = parseDecimal(value);
