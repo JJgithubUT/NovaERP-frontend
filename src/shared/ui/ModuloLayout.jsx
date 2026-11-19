@@ -29,7 +29,7 @@ export function ModuloLayout({ titulo, descripcion, base, pestanas }) {
   const tenantSlug = useTenantSlug();
 
   return (
-    <section className="-m-4 flex min-h-full flex-col md:-m-8">
+    <section className="-m-4 flex flex-col md:-m-8">
       <div className="sticky top-0 z-20 bg-background px-6 pt-6">
         <header className="mb-6">
           <h1 className="text-3xl font-bold text-on-surface">{titulo}</h1>
@@ -57,6 +57,13 @@ export function ModuloLayout({ titulo, descripcion, base, pestanas }) {
             </NavLink>
           ))}
         </nav>
+
+        {/*
+         * Franja blanca bajo las pestañas. Va DENTRO de la cabecera sticky para
+         * que, al hacer scroll, el contenido de la pestaña desaparezca debajo de
+         * ella y nunca quede pegado (o encimado) a la línea de las pestañas.
+         */}
+        <div aria-hidden="true" className="h-4 border-x border-outline-variant bg-surface" />
       </div>
 
       <div className="px-6 pb-6">

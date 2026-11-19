@@ -6,6 +6,7 @@ import './index.css';
 import { queryClient } from './core/query/query-client';
 import { arrancarSesion } from './core/auth/auth.service';
 import { arrancarSesionPlataforma } from './core/plataforma/plataforma.service';
+import { registroPwa } from './core/pwa/pwa-registro';
 import { router } from './app/router';
 /*
  * Refresca el contexto de las dos superficies antes del primer render, sin
@@ -15,6 +16,11 @@ import { router } from './app/router';
  */
 arrancarSesion();
 arrancarSesionPlataforma();
+/*
+ * El SW se registra aquí y no dentro del shell: así también queda instalado en
+ * las pantallas públicas, y la primera visita al login ya precachea la app.
+ */
+registroPwa.iniciar();
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

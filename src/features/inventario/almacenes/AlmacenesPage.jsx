@@ -5,8 +5,10 @@ import { PAGE_SIZE_DEFAULT } from '../../../api/models/common.model';
 import * as inventarioApi from '../../../api/services/inventario.api';
 import { useTenantSlug } from '../../../core/auth/useAuth';
 import { isApiError } from '../../../core/errors/api-error.model';
+import { useCatalogoConPendientes } from '../../../core/offline/catalogo-pendiente';
 import { qk } from '../../../core/query/query-keys';
 import { Badge } from '../../../shared/ui/Badge';
+import { MarcaPendiente } from '../../../shared/ui/MarcaPendiente';
 import { Buscador } from '../../../shared/ui/Buscador';
 import { EstadoTabla } from '../../../shared/ui/FilaMensaje';
 import { Paginacion } from '../../../shared/ui/Paginacion';
@@ -14,6 +16,15 @@ import { toasts } from '../../../shared/ui/toast';
 import { AlmacenFormModal } from './AlmacenFormModal';
 
 const COLUMNAS = 4;
+
+/** El mismo campo por el que busca el backend: el nombre. */
+const CAMPOS_BUSQUEDA = ['nombre'];
+
+/*
+ * Referencia estable para «aún no hay datos»: un `[]` literal sería un array
+ * nuevo en cada render y obligaría a recalcular la superposición siempre.
+ */
+const SIN_FILAS = [];
 
 /** Catálogo de almacenes. Baja lógica, sin reactivación desde la API. */
 export function AlmacenesPage() {
@@ -84,7 +95,16 @@ export function AlmacenesPage() {
     setEnEdicion(null);
   }
 
-  const filas = consulta.data?.results ?? [];
+  /*
+   * Las filas del servidor con los cambios del outbox encima: lo que el usuario
+   * guardó sin red se ve en la tabla al instante, marcado como pendiente.
+   */
+  const filas = useCatalogoConPendientes('almacenes', consulta.data?.results ?? SIN_FILAS, {
+    tenantSlug,
+    pagina,
+    busqueda,
+    camposBusqueda: CAMPOS_BUSQUEDA,
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -149,7 +169,10 @@ export function AlmacenesPage() {
             {!consulta.isPending && !consulta.error
               ? filas.map((almacen) => (
                   <tr key={almacen.id}>
-                    <td className="font-medium">{almacen.nombre}</td>
+                    <td className="font-medium">
+                      {almacen.nombre}
+                      <MarcaPendiente tipo={almacen._pendiente} />
+                    </td>
                     <td className="tenue">{almacen.ubicacion || '—'}</td>
                     <td>
                       <Badge tono={almacen.activo ? 'exito' : 'neutro'}>
@@ -157,7 +180,18 @@ export function AlmacenesPage() {
                       </Badge>
                     </td>
                     <td className="text-right">
-                      <button type="button" className="btn-fila" onClick={() => abrir(almacen)}>
+                      {/* Alta pendiente: id temporal, el PATCH daría 404. */}
+                      <button
+                        type="button"
+                        className="btn-fila"
+                        disabled={almacen._pendiente === 'crear'}
+                        title={
+                          almacen._pendiente === 'crear'
+                            ? 'Se podrá editar cuando se envíe al servidor.'
+                            : undefined
+                        }
+                        onClick={() => abrir(almacen)}
+                      >
                         <Pencil size={14} />
                         Editar
                       </button>

@@ -1,5 +1,5 @@
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Download } from 'lucide-react';
+import { registroPwa, useHayActualizacion } from '../core/pwa/pwa-registro';
 
 /**
  * Aviso de que hay una versión nueva de la aplicación esperando.
@@ -8,14 +8,12 @@ import { Download } from 'lucide-react';
  * es la decisión importante: recargar por su cuenta mientras alguien está
  * capturando una factura le borraría el formulario. Se le ofrece y decide él.
  *
- * `onNeedRefresh` se dispara cuando hay un SW nuevo en espera; `updateServiceWorker(true)`
- * lo activa y recarga.
+ * El registro del SW no vive aquí sino en `core/pwa/pwa-registro.js`, que se
+ * arranca en `main.jsx`: este componente solo existe dentro del shell, y el SW
+ * tiene que instalarse también en el login.
  */
 export function ActualizacionPrompt() {
-  const {
-    needRefresh: [hayActualizacion, setHayActualizacion],
-    updateServiceWorker,
-  } = useRegisterSW();
+  const hayActualizacion = useHayActualizacion();
 
   if (!hayActualizacion) return null;
 
@@ -27,14 +25,14 @@ export function ActualizacionPrompt() {
       <div className="ml-auto flex gap-2">
         <button
           type="button"
-          onClick={() => setHayActualizacion(false)}
+          onClick={() => registroPwa.posponer()}
           className="text-on-surface-variant underline"
         >
           Ahora no
         </button>
         <button
           type="button"
-          onClick={() => void updateServiceWorker(true)}
+          onClick={() => void registroPwa.actualizar()}
           className="font-semibold text-action underline"
         >
           Actualizar y recargar

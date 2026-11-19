@@ -5,8 +5,10 @@ import { PAGE_SIZE_DEFAULT } from '../../../api/models/common.model';
 import * as inventarioApi from '../../../api/services/inventario.api';
 import { useTenantSlug } from '../../../core/auth/useAuth';
 import { isApiError } from '../../../core/errors/api-error.model';
+import { useCatalogoConPendientes } from '../../../core/offline/catalogo-pendiente';
 import { qk } from '../../../core/query/query-keys';
 import { Badge } from '../../../shared/ui/Badge';
+import { MarcaPendiente } from '../../../shared/ui/MarcaPendiente';
 import { Buscador } from '../../../shared/ui/Buscador';
 import { EstadoTabla } from '../../../shared/ui/FilaMensaje';
 import { Paginacion } from '../../../shared/ui/Paginacion';
@@ -16,6 +18,15 @@ import { invalidarStock } from '../invalidarStock';
 import { ProductoFormModal } from './ProductoFormModal';
 
 const COLUMNAS = 7;
+
+/** Los mismos campos por los que busca el backend: SKU o nombre. */
+const CAMPOS_BUSQUEDA = ['sku', 'nombre'];
+
+/*
+ * Referencia estable para «aún no hay datos»: un `[]` literal sería un array
+ * nuevo en cada render y obligaría a recalcular la superposición siempre.
+ */
+const SIN_FILAS = [];
 
 /**
  * Catálogo de productos.
@@ -98,7 +109,16 @@ export function ProductosPage() {
     setEnEdicion(null);
   }
 
-  const filas = consulta.data?.results ?? [];
+  /*
+   * Las filas del servidor con los cambios del outbox encima: lo que el usuario
+   * guardó sin red se ve en la tabla al instante, marcado como pendiente.
+   */
+  const filas = useCatalogoConPendientes('productos', consulta.data?.results ?? SIN_FILAS, {
+    tenantSlug,
+    pagina,
+    busqueda,
+    camposBusqueda: CAMPOS_BUSQUEDA,
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -167,7 +187,10 @@ export function ProductosPage() {
               ? filas.map((producto) => (
                   <tr key={producto.id}>
                     <td className="clave">{producto.sku}</td>
-                    <td className="font-medium">{producto.nombre}</td>
+                    <td className="font-medium">
+                      {producto.nombre}
+                      <MarcaPendiente tipo={producto._pendiente} />
+                    </td>
                     <td className="num tenue">{formatMoneda(producto.costo_referencia)}</td>
                     <td className="num">{formatMoneda(producto.precio_venta)}</td>
                     <td className="num tenue">{formatCantidad(producto.stock_minimo)}</td>
@@ -177,7 +200,18 @@ export function ProductosPage() {
                       </Badge>
                     </td>
                     <td className="text-right">
-                      <button type="button" className="btn-fila" onClick={() => abrir(producto)}>
+                      {/* Alta pendiente: id temporal, el PATCH daría 404. */}
+                      <button
+                        type="button"
+                        className="btn-fila"
+                        disabled={producto._pendiente === 'crear'}
+                        title={
+                          producto._pendiente === 'crear'
+                            ? 'Se podrá editar cuando se envíe al servidor.'
+                            : undefined
+                        }
+                        onClick={() => abrir(producto)}
+                      >
                         <Pencil size={14} />
                         Editar
                       </button>

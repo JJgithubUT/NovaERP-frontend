@@ -24,6 +24,7 @@ export async function drenarOutbox(tenantSlug) {
   /** @type {DrenadoResultado} */
   const resultado = { enviados: 0, fallidos: 0, sinRed: false };
 
+  await liberarAtascados();
   const pendientes = await leerPendientes(tenantSlug);
 
   for (const item of pendientes) {
@@ -73,9 +74,40 @@ async function tomar(item) {
     const actual = await db.outbox.get(item.id);
     if (actual?.estado !== 'pendiente') return false;
 
-    await db.outbox.update(item.id, { estado: 'enviando', intentos: actual.intentos + 1 });
+    await db.outbox.update(item.id, {
+      estado: 'enviando',
+      intentos: actual.intentos + 1,
+      tomadoEn: Date.now(),
+    });
     return true;
   });
+}
+
+/**
+ * Pasado este tiempo, un item 'enviando' ya no está en vuelo: quien lo tomó
+ * murió antes de resolverlo. Holgado a propósito —muy por encima de lo que
+ * tarda un `fetch` lento— para no rescatar uno que de verdad sigue en camino y
+ * mandarlo dos veces.
+ */
+const ATASCADO_TRAS_MS = 5 * 60 * 1000;
+
+/**
+ * Devuelve a 'pendiente' los items que se quedaron en 'enviando'.
+ *
+ * Pasa cuando el navegador mata al SW a mitad del `fetch` (lo hace sin aviso,
+ * por tiempo o por memoria) o cuando se cierra la pestaña que drenaba. Sin
+ * esto, el item no lo vuelve a tomar nadie —`leerPendientes` solo lee
+ * 'pendiente'— y el banner muestra «1 cambio pendiente» para siempre.
+ *
+ * Un item sin `tomadoEn` viene de antes de este campo: se considera atascado.
+ */
+async function liberarAtascados() {
+  const limite = Date.now() - ATASCADO_TRAS_MS;
+  await db.outbox
+    .where('estado')
+    .equals('enviando')
+    .and((item) => (item.tomadoEn ?? 0) < limite)
+    .modify({ estado: 'pendiente' });
 }
 
 /**

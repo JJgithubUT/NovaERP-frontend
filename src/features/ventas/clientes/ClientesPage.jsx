@@ -5,8 +5,10 @@ import { PAGE_SIZE_DEFAULT } from '../../../api/models/common.model';
 import * as ventasApi from '../../../api/services/ventas.api';
 import { useTenantSlug } from '../../../core/auth/useAuth';
 import { isApiError } from '../../../core/errors/api-error.model';
+import { useCatalogoConPendientes } from '../../../core/offline/catalogo-pendiente';
 import { qk } from '../../../core/query/query-keys';
 import { Badge } from '../../../shared/ui/Badge';
+import { MarcaPendiente } from '../../../shared/ui/MarcaPendiente';
 import { Buscador } from '../../../shared/ui/Buscador';
 import { EstadoTabla } from '../../../shared/ui/FilaMensaje';
 import { Paginacion } from '../../../shared/ui/Paginacion';
@@ -15,6 +17,15 @@ import { formatMoneda } from '../../../shared/utils/decimal.util';
 import { ClienteFormModal } from './ClienteFormModal';
 
 const COLUMNAS = 6;
+
+/** Los mismos campos por los que busca el backend: razón social o RFC. */
+const CAMPOS_BUSQUEDA = ['razon_social', 'rfc_o_id_fiscal'];
+
+/*
+ * Referencia estable para «aún no hay datos»: un `[]` literal sería un array
+ * nuevo en cada render y obligaría a recalcular la superposición siempre.
+ */
+const SIN_FILAS = [];
 
 /**
  * Catálogo de clientes (FLUJO-VENTAS §6).
@@ -84,7 +95,16 @@ export function ClientesPage() {
     setEnEdicion(null);
   }
 
-  const filas = consulta.data?.results ?? [];
+  /*
+   * Las filas del servidor con los cambios del outbox encima: lo que el usuario
+   * guardó sin red se ve en la tabla al instante, marcado como pendiente.
+   */
+  const filas = useCatalogoConPendientes('clientes', consulta.data?.results ?? SIN_FILAS, {
+    tenantSlug,
+    pagina,
+    busqueda,
+    camposBusqueda: CAMPOS_BUSQUEDA,
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -137,7 +157,10 @@ export function ClientesPage() {
             {!consulta.isPending && !consulta.error
               ? filas.map((cliente) => (
                   <tr key={cliente.id}>
-                    <td className="font-medium">{cliente.razon_social}</td>
+                    <td className="font-medium">
+                      {cliente.razon_social}
+                      <MarcaPendiente tipo={cliente._pendiente} />
+                    </td>
                     <td className="clave tenue">{cliente.rfc_o_id_fiscal || '—'}</td>
                     <td className="tenue">{cliente.correo || cliente.telefono || '—'}</td>
                     <td className="num">{formatMoneda(cliente.limite_credito)}</td>
@@ -147,7 +170,22 @@ export function ClientesPage() {
                       </Badge>
                     </td>
                     <td className="text-right">
-                      <button type="button" className="btn-fila" onClick={() => abrir(cliente)}>
+                      {/*
+                       * Un alta pendiente todavía no existe en el servidor: su
+                       * id es temporal, y un PATCH o DELETE contra él daría 404
+                       * al sincronizar. Se podrá editar en cuanto llegue.
+                       */}
+                      <button
+                        type="button"
+                        className="btn-fila"
+                        disabled={cliente._pendiente === 'crear'}
+                        title={
+                          cliente._pendiente === 'crear'
+                            ? 'Se podrá editar cuando se envíe al servidor.'
+                            : undefined
+                        }
+                        onClick={() => abrir(cliente)}
+                      >
                         <Pencil size={14} />
                         Editar
                       </button>

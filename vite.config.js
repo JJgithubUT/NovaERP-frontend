@@ -26,19 +26,50 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.js',
+      /*
+       * El registro lo hace `core/pwa/pwa-registro.js` desde `main.jsx`, no el
+       * plugin: así el SW se instala también en las pantallas públicas (login),
+       * no solo cuando se monta el shell.
+       */
+      injectRegister: false,
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        /*
+         * El tope por defecto es 2 MiB. Un chunk que lo pase se queda fuera del
+         * precache sin error —solo un aviso en el build— y la app deja de abrir
+         * offline. En un ERP con ~30 pantallas no es raro llegar ahí.
+         */
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
+      includeAssets: ['favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
+        id: '/',
         name: 'NovaERP',
         short_name: 'NovaERP',
         description: 'Sistema de gestión empresarial',
         lang: 'es-MX',
         start_url: '/',
+        scope: '/',
         display: 'standalone',
         background_color: '#F2F2F2',
         theme_color: '#73030D',
-        icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+        /*
+         * El SVG solo no basta: Android pide PNG de 192 y 512 para ofrecer
+         * «Instalar» con buen ícono, y el `maskable` evita que lo recorte en un
+         * círculo con bordes blancos. Los genera `npm run iconos`.
+         */
+        icons: [
+          { src: '/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          {
+            src: '/maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
+        ],
       },
     }),
   ],

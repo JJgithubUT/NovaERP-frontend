@@ -54,7 +54,18 @@ sw.addEventListener('sync', (evento) => {
    * abierta y debe drenar todo lo pendiente del dispositivo. Cada item lleva su
    * propio token.
    */
-  evento.waitUntil(drenarOutbox());
+  evento.waitUntil(
+    (async () => {
+      const { sinRed } = await drenarOutbox();
+      /*
+       * Si quedó algo sin enviar, la promesa tiene que *rechazar*: es la única
+       * señal con la que el navegador sabe que el sync falló y lo reprograma
+       * con backoff. Si resuelve, da el tag por cumplido y lo pendiente se
+       * queda en IndexedDB hasta que alguien vuelva a abrir la app.
+       */
+      if (sinRed) throw new Error('Outbox sin drenar: el backend no respondió.');
+    })(),
+  );
 });
 
 /** Permite a la aplicación activar una versión nueva sin esperar. */

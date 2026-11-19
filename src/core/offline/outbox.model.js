@@ -40,6 +40,7 @@
  * @property {number} createdAt
  * @property {number} intentos
  * @property {OutboxEstado} estado
+ * @property {number} [tomadoEn] Cuándo pasó a 'enviando'. Permite rescatar un item cuyo drenado murió a medias (ver `liberarAtascados`).
  * @property {string} [ultimoError]
  * @property {Uuid} [tempId] Id temporal del registro creado localmente. Cuando el POST sincronice, el backend devolverá el UUID real y hay que reconciliar.
  */

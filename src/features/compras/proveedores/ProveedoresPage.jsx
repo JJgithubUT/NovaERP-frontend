@@ -5,8 +5,10 @@ import { PAGE_SIZE_DEFAULT } from '../../../api/models/common.model';
 import * as comprasApi from '../../../api/services/compras.api';
 import { useTenantSlug } from '../../../core/auth/useAuth';
 import { isApiError } from '../../../core/errors/api-error.model';
+import { useCatalogoConPendientes } from '../../../core/offline/catalogo-pendiente';
 import { qk } from '../../../core/query/query-keys';
 import { Badge } from '../../../shared/ui/Badge';
+import { MarcaPendiente } from '../../../shared/ui/MarcaPendiente';
 import { Buscador } from '../../../shared/ui/Buscador';
 import { EstadoTabla } from '../../../shared/ui/FilaMensaje';
 import { Paginacion } from '../../../shared/ui/Paginacion';
@@ -15,6 +17,15 @@ import { HistorialProveedorModal } from './HistorialProveedorModal';
 import { ProveedorFormModal } from './ProveedorFormModal';
 
 const COLUMNAS = 5;
+
+/** Los mismos campos por los que busca el backend: razón social o RFC. */
+const CAMPOS_BUSQUEDA = ['razon_social', 'rfc_o_id_fiscal'];
+
+/*
+ * Referencia estable para «aún no hay datos»: un `[]` literal sería un array
+ * nuevo en cada render y obligaría a recalcular la superposición siempre.
+ */
+const SIN_FILAS = [];
 
 /**
  * Catálogo de proveedores.
@@ -92,7 +103,16 @@ export function ProveedoresPage() {
     setEnEdicion(null);
   }
 
-  const filas = consulta.data?.results ?? [];
+  /*
+   * Las filas del servidor con los cambios del outbox encima: lo que el usuario
+   * guardó sin red se ve en la tabla al instante, marcado como pendiente.
+   */
+  const filas = useCatalogoConPendientes('proveedores', consulta.data?.results ?? SIN_FILAS, {
+    tenantSlug,
+    pagina,
+    busqueda,
+    camposBusqueda: CAMPOS_BUSQUEDA,
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -159,7 +179,10 @@ export function ProveedoresPage() {
             {!consulta.isPending && !consulta.error
               ? filas.map((proveedor) => (
                   <tr key={proveedor.id}>
-                    <td className="font-medium">{proveedor.razon_social}</td>
+                    <td className="font-medium">
+                      {proveedor.razon_social}
+                      <MarcaPendiente tipo={proveedor._pendiente} />
+                    </td>
                     <td className="clave tenue">{proveedor.rfc_o_id_fiscal}</td>
                     <td className="tenue">{proveedor.correo || proveedor.telefono || '—'}</td>
                     <td>
@@ -169,15 +192,31 @@ export function ProveedoresPage() {
                     </td>
                     <td>
                       <div className="flex justify-end gap-1.5">
+                        {/*
+                         * Un alta pendiente todavía no existe en el servidor:
+                         * su id es temporal, así que ni tiene historial ni se
+                         * puede editar (el PATCH daría 404 al sincronizar).
+                         */}
                         <button
                           type="button"
                           className="btn-fila"
+                          disabled={proveedor._pendiente === 'crear'}
                           onClick={() => setEnHistorial(proveedor)}
                         >
                           <History size={14} />
                           Historial
                         </button>
-                        <button type="button" className="btn-fila" onClick={() => abrir(proveedor)}>
+                        <button
+                          type="button"
+                          className="btn-fila"
+                          disabled={proveedor._pendiente === 'crear'}
+                          title={
+                            proveedor._pendiente === 'crear'
+                              ? 'Se podrá editar cuando se envíe al servidor.'
+                              : undefined
+                          }
+                          onClick={() => abrir(proveedor)}
+                        >
                           <Pencil size={14} />
                           Editar
                         </button>
